@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 176" fill="none">
+ <defs>
+  <linearGradient id="silver" x1="100" y1="55" x2="580" y2="115" gradientUnits="userSpaceOnUse"><stop stop-color="#DBECFF"/><stop offset=".45" stop-color="#F7F2D9"/><stop offset=".67" stop-color="#D5F2E5"/><stop offset="1" stop-color="#E7D4FF"/></linearGradient>
+  <linearGradient id="rule" x1="60" y1="0" x2="620" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#98B8DE" stop-opacity="0"/><stop offset=".3" stop-color="#C4D5DB"/><stop offset=".7" stop-color="#DCCBE6"/><stop offset="1" stop-color="#C4ADE2" stop-opacity="0"/></linearGradient>
+ </defs>
+ <path d="M268 31h48m48 0h48" stroke="url(#silver)" stroke-opacity=".65"/>
+ <path d="m340 8 5 11 6-4-1 10 8-2-2 8 4 3-17 5v7h-6v-7l-17-5 4-3-2-8 8 2-1-10 6 4 5-11Z" fill="url(#silver)"/>
+ <path d="m305 27 4 4-4 4-4-4 4-4Z" fill="#92CFFF"/><path d="m375 27 4 4-4 4-4-4 4-4Z" fill="#DBB9F3"/>
+ <text x="342" y="106" text-anchor="middle" font-family="Georgia,serif" font-size="57" letter-spacing="5" fill="#020817" stroke="#020817" stroke-width="3" stroke-linejoin="round">MAPLETOOLS</text>
+ <text x="340" y="103" text-anchor="middle" font-family="Georgia,serif" font-size="57" letter-spacing="5" fill="url(#silver)">MAPLETOOLS</text>
+ <path d="M60 126h560" stroke="url(#rule)"/>
+ <text x="340" y="151" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" letter-spacing="4" fill="#D6DBE9">EQUIPMENT · UNION · COORDI</text>
+</svg>

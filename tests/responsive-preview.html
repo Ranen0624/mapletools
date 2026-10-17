@@ -1,0 +1,5 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>Canvas 2D responsive QA</title>
+<style>body{margin:0;background:#272936;color:white;font:14px sans-serif}header{padding:12px}button{padding:8px;margin-right:8px}iframe{display:block;width:390px;height:820px;border:1px solid #777;margin:0 auto;max-width:100%}</style>
+<header><button data-width="390">Phone 390px</button><button data-width="768">Tablet 768px</button><button data-width="1200">Desktop 1200px</button><output>390px · actual homepage iframe</output></header>
+<iframe title="실제 홈페이지 반응형 확인" src="../index.html#data-playground"></iframe>
+<script>document.querySelectorAll('button').forEach(b=>b.onclick=()=>{document.querySelector('iframe').style.width=b.dataset.width+'px';document.querySelector('output').textContent=b.dataset.width+'px · actual homepage iframe';});</script></html>

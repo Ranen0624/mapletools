@@ -1,0 +1,10 @@
+/* Illustration and transparent title remain independent reusable layers. */
+.art-title{position:absolute!important;inset:auto 2% 16%!important;z-index:2;pointer-events:none;padding:0!important;background:none!important;text-align:center}
+.art-title>img{display:block!important;position:static!important;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;margin:0 auto;filter:drop-shadow(0 2px 3px #080c2b99)}
+.art-title[data-title=coordi]{inset-inline:2%!important}
+.art-title[data-title=union]{bottom:15%!important}
+.hero-title{bottom:21%!important;transition:transform .4s cubic-bezier(.2,.7,.25,1),filter .4s;transform:translateY(0)}
+.hero-title[data-title=union]{bottom:20%!important}
+.hero-title[data-title=coordi]{inset-inline:2%!important}
+.character-scene:not([data-motion=paused]) .character-plane:is(:hover,:focus-within) .hero-title{transform:translateY(-9px) scale(1.025);filter:brightness(1.12)}
+@media(prefers-reduced-motion:reduce){.hero-title{transition:none!important;transform:none!important}}

@@ -1,0 +1,32 @@
+{
+  "updated": "2026-10-18",
+  "public_windows": {
+    "version": "2.0.3",
+    "file": "downloads/MapleTools_PC_Public_2.0.3.zip",
+    "bytes": 66465604,
+    "sha256": "f61637f660a4eb535d19fa4ccf72fdf77e7ddce4549c971653b9ccf446422796",
+    "public_download": true,
+    "requires_user_key": true,
+    "launcher": "MapleTools.exe",
+    "package_type": "Nuitka native compiled Windows x64 standalone",
+    "device_tested": true,
+    "validation": "63 application modules compiled; native EXE home/equipment/union/coordi self-test passed; source and private-key scan passed."
+  },
+  "public_android": {
+    "version": "1.0.3",
+    "file": "downloads/MapleTools_Android_Public_1.0.3.apk",
+    "bytes": 24691886,
+    "sha256": "ce05de4c0c651ed5f330c063482e193b5837ca9b087757111dea3b4392d3ea48",
+    "public_download": true,
+    "requires_user_key": true,
+    "minimum_android": "8.0",
+    "abi": "arm64-v8a",
+    "package_type": "R8 optimized APK with 25 Cython ARM64 application modules",
+    "device_tested": false,
+    "version_code": 14,
+    "emulator_tested": true,
+    "validation": "Android 35 x86_64 emulator: native-module loading, selfcheck, bootstrap, config validation, WebView recommendations and set/reward selection; ARM64 signature verified, same upgrade signer; physical device not tested."
+  },
+  "web_demo_reference_version": "2.0.3",
+  "patch_notes": "updates.html"
+}

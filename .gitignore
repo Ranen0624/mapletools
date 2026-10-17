@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.log
+*.mtbackup
+*RECOVERY_KEY*
+*.jks
+*.keystore
+signing.local.json
+tests/evidence/coordi-051/*.jpg
+tests/evidence/hero-*.png
+tests/evidence/coordi-iframe.png
+tests/evidence/layers-*.png
+
+# Generated verification outputs stay local.
+tests/evidence/

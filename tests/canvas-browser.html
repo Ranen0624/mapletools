@@ -1,0 +1,23 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>Data Mate · 포즈 미리보기</title>
+<style>body{background:#171a30;color:#eee;font:14px system-ui;margin:24px}main{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}canvas{width:100%;height:auto;background:#25263f;border-radius:16px}h2{font-size:15px}pre{white-space:pre-wrap;color:#aee9de}@media(max-width:800px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}button{background:#3d365e;color:white;border:1px solid #8b7caf;border-radius:8px;padding:10px 18px;margin:12px 0}</style>
+<h1>데이터 메이트 · 표정과 동작</h1><p>호버로 호기심 · 클릭하면 인사 · 드래그로 이동 · 쉬는 동안 독서</p><button id="toggle">애니메이션 멈추기</button> <button id="blink-sample">눈 감기 확인</button> <button id="page-sample">책장 넘김 확인</button><main><div><h2>기본 / 숨쉬기</h2><canvas id="idle" width="512" height="606"></canvas></div><div><h2>호버 / 호기심</h2><canvas id="hover" width="512" height="606"></canvas></div><div><h2>클릭 / 인사</h2><canvas id="greet" width="512" height="606"></canvas></div><div><h2>대기 / 독서</h2><canvas id="read" width="512" height="606"></canvas></div></main><pre id="result">검증 중</pre>
+<script type="module">
+import {createMatePainter,poseAt} from '../mate-rig.js';
+try{
+ const load=src=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src;});
+ const asset=n=>load('../assets/'+n);
+ const [open,atlas,body,head,headBlink]=await Promise.all([asset('data-mate.webp'),asset('data-mate-poses.webp'),asset('data-mate-body-repair.webp'),Promise.all([0,1,2,3].map(i=>asset('data-mate-head-'+i+'.webp'))),Promise.all([0,1,2,3].map(i=>asset('data-mate-head-'+i+'-blink.webp')))]);
+ const paint=createMatePainter(open,null,atlas,{body,head,headBlink}),contexts=['idle','hover','greet','read'].map(id=>document.getElementById(id).getContext('2d'));
+ let running=true,frame=0;
+ function render(time=0){contexts.forEach((ctx,i)=>{ctx.clearRect(0,0,512,606);paint(ctx,poseAt(time,Math.sin(time*.3),0,i===2?.6:0),i);});}
+ const began=performance.now();render(2);const renderMs=performance.now()-began;
+ const samples=contexts.map(ctx=>ctx.getImageData(0,0,512,606).data);
+ const results=samples.map(data=>{let visible=0,edge=0;for(let y=0;y<606;y++)for(let x=0;x<512;x++){if(data[(y*512+x)*4+3]>32){visible++;if(x<10||x>501||y<10||y>595)edge++;}}return {visiblePixels:visible,edgePixels:edge};});
+ const pass=results.every(r=>r.visiblePixels>50000&&r.edgePixels===0);
+ document.getElementById('result').textContent=JSON.stringify({renderer:'Canvas 2D',poses:4,rigidLayers:true,renderMs:Math.round(renderMs),results,pass},null,2);document.documentElement.dataset.result=pass?'pass':'fail';
+ let start=performance.now();function tick(now){render((now-start)/1000);if(running)frame=requestAnimationFrame(tick);}frame=requestAnimationFrame(tick);
+ document.getElementById('toggle').onclick=event=>{running=!running;event.target.textContent=running?'애니메이션 멈추기':'애니메이션 재생';if(running){start=performance.now();frame=requestAnimationFrame(tick);}else cancelAnimationFrame(frame);};
+ document.getElementById('blink-sample').onclick=()=>{running=false;cancelAnimationFrame(frame);render(1.91);document.getElementById('toggle').textContent='애니메이션 재생';};
+ document.getElementById('page-sample').onclick=()=>{running=false;cancelAnimationFrame(frame);render(2.9);document.getElementById('toggle').textContent='애니메이션 재생';};
+}catch(error){document.getElementById('result').textContent=error.stack;document.documentElement.dataset.result='fail';}
+</script></html>

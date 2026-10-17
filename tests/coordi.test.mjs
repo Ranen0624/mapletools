@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {COORDI_CHARACTERS,SAMPLE_DATE,normalizeName,parseQuery,matchOutfit,searchCoordi,coordiCsv} from '../coordi-engine.js';
+let count=0;const test=(name,fn)=>{fn();count++;console.log('PASS '+name);};
+const defaults={date:SAMPLE_DATE,min:'290',max:'300',pages:'300',normal:true,special:true,mode:'contains',query:'밤의 엘로디, 메르헨 판타지, 엘로디 헤어'};
+test('Comma, semicolon and newline split while preserving repeated items',()=>assert.deepEqual(parseQuery('별빛 반지, 별빛 반지;\n엘로디 헤어'),['별빛 반지','별빛 반지','엘로디 헤어']));
+test('Normalized names, aliases and partial names',()=>{assert.equal(normalizeName(' Ａ　 B '),'a b');assert.equal(searchCoordi({...defaults,query:'밤의'}).length,5);assert.equal(searchCoordi({...defaults,query:'검은색 엘로디 헤어'}).length,5);});
+test('Primary and additional saved presets matched with current first',()=>{const rows=searchCoordi(defaults);assert.equal(rows.length,3);assert.equal(rows[0].matches.length,2);assert(rows[0].chosen.current);assert.equal(rows[1].chosen.label,'프리셋 1');assert.equal(rows[2].chosen.label,'추가 프리셋 3');});
+test('Exact cash outfit allows unrequested beauty and chooses saved config',()=>{const rows=searchCoordi({...defaults,mode:'exact',query:'밤의 엘로디, 메르헨 판타지'});assert.equal(rows.length,3);assert.equal(rows[0].chosen.label,'프리셋 2');assert.equal(searchCoordi({...defaults,mode:'exact',query:'엘로디 헤어'}).length,0);});
+test('Repeated request consumes two actual items',()=>{assert.equal(searchCoordi({...defaults,query:'별빛 반지, 별빛 반지'}).length,1);assert.equal(searchCoordi({...defaults,query:'별빛 반지, 별빛 반지, 별빛 반지'}).length,0);});
+test('Items cannot be combined across independent presets',()=>{assert.equal(searchCoordi({...defaults,query:'밤의 엘로디, 메르헨 판타지'},[COORDI_CHARACTERS[4]]).length,0);assert.equal(matchOutfit(COORDI_CHARACTERS[0].configs[0].items,[]),null);});
+test('World type, server, job group and level combine',()=>{assert.equal(searchCoordi({...defaults,normal:false}).length,0);assert.equal(searchCoordi({...defaults,server:'루나',group:'마법사',job:'비숍',min:'290',max:'290'}).length,1);assert.equal(searchCoordi({...defaults,server:'없는월드'}).length,0);});
+test('Empty, invalid range, pages, world selection and unsupported dates reject',()=>{for(const change of [{query:''},{min:'301',max:'290'},{min:''},{pages:'1001'},{normal:false,special:false},{date:'2026-10-13'},{mode:'wrong'}])assert.throws(()=>searchCoordi({...defaults,...change}));});
+test('CSV has BOM, original eight columns and all matched preset locations',()=>{const text=coordiCsv(searchCoordi(defaults));assert(text.startsWith('\ufeff'));assert.equal(text.split('\r\n').length,4);assert(text.includes('프리셋 2'));assert(text.includes('추가 프리셋 3'));});
+test('All requested conditions, freestyle suffix, overlapping partial names and skin',()=>{
+ const items=[{name:'별빛 모자 [공용]',kind:'cash'},{name:'별빛 옷',kind:'cash'},{name:'뽀송 라벤더 피부',kind:'beauty'}];
+ assert.equal(matchOutfit(items,['모자','없는 옷']),null);
+ assert.equal(matchOutfit(items,['별빛','모자','라벤더']).length,3);
+ assert.equal(matchOutfit(items,['별빛모자','옷']).length,2);
+ assert.equal(matchOutfit(items,['[공용]']),null);
+});
+console.log(JSON.stringify({coordi_engine_checks:count}));

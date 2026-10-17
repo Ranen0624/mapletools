@@ -1,0 +1,28 @@
+Data Mate artwork provenance — 2026-10-15
+
+Generated with the built-in image_gen tool, referencing assets/data-mate.webp.
+Final assets: assets/data-mate-poses.webp and assets/data-mate-poses-blink.webp.
+WebP encoding preserves transparency; the painter extracts registered atlas cells at runtime.
+
+Initial prompt:
+Use case: identity-preserve. Create a production 2D character animation sprite atlas from the reference chibi witch. Transparent RGBA background. A precise 2 columns by 2 rows grid, four equal-sized cells. In EVERY cell show the SAME complete full body character at exactly the same scale and baseline, uncropped with at least 8% transparent margin on all sides. Preserve the intricate navy violet gold star witch hat, lavender silver long curly hair, large blue purple eyes, ornate navy gold white dress, boots and beautiful polished anime rendering. Top left: original gentle smile idle, blue star orb in right hand, left arm relaxed. Top right: curious hover reaction, head slightly tilted, eyes open and looking toward viewer, small question mark floating by head. Bottom left: happy greeting, eyes closed smiling, left hand raised waving with five small fingers, blue orb in right hand, two little pink hearts beside head. Bottom right: quiet idle reading, gaze downward with eyelids lowered, both hands holding a small open ornate navy/gold spellbook at waist, no orb. Draw complete graceful right-side hair locks without straight chopped seams or cut edges. Do not mix cells or connect sprites across cells. No labels, no borders, no backdrop, no cast shadow rectangle. This is a 4-pose sprite atlas for a Canvas 2D website mascot; all 4 cells must be independently usable. Preserve character identity and design as closely as possible.
+
+Clean atlas prompt:
+Use case: precise-object-edit. Edit the supplied four-cell transparent sprite atlas. Preserve exactly the same canvas size, 2x2 cell layout, every character position, scale, pose, facial features, costume, hair and framing. Make ONLY these edits: remove the floating blue question mark and its small diamond below it from the TOP RIGHT cell; remove the two floating pink hearts from the BOTTOM LEFT cell. Replace their pixels with transparent background. Do not remove any hat decorations or the blue orb. Preserve every other part of the original artwork. No new elements. This is an animation texture atlas requiring exact registration. Keep transparent background.
+
+Blink atlas prompt:
+Use case: precise-object-edit. This transparent image is a registered 2x2 animation sprite atlas. Preserve EXACT canvas layout, character positions, sizes, silhouette, hair, hats, clothes, mouth shapes, hands, book and orbs. Change ONLY the eyes of the top-left, top-right and bottom-right characters to naturally fully CLOSED eyelids for a brief blink, preserving eyelashes and the existing eye tilt. Cover visible irises with matching pale peach eyelid skin, draw thin dark curved lash lines at the normal closed eye position. Do not change eyebrows or mouth. Bottom-left character already has closed smiling eyes: preserve it unchanged. Do not add hearts or question marks. Do not rearrange, crop, enlarge or redraw the characters. Exact registration with source is essential because only small eye patches will be used in animation. Transparent background.
+
+Final implementation: four body poses, four detached heads and their closed-eye patches, an independently rotating traced forearm and hand, and separate procedural effects. All joint motion uses rigid translation/rotation. No mesh deformation, software texture warping, stretch or motion blur remains. Two gentle waves take 3.4 seconds, with a 0.16-second wrist delay and a still hold. The page is a separately drawn Canvas paper shape.
+
+Additional built-in image_gen prompts:
+
+Hand repair: Remove the raised waving hand and bare forearm in the bottom-left pose, reconstruct the silver hair behind it, preserve the sleeve, cuff and all other artwork and registration.
+
+Body underpainting: Remove all four heads, hats and front curls. Preserve bodies, arms, orbs and book exactly. Reconstruct rear hair and collars behind the removed heads. Transparent registered atlas.
+
+Detached head layer: Retain only each complete hat, head, side braids and front curls, with a small neck overlap. Remove body, arms, orbs, book, legs and long rear hair. Transparent four-head atlas. The generation changed head scale, so HEAD_PLACEMENT registers each rigid head once at initialization.
+
+Head blink: Close only the eyes of the first, second and fourth detached heads. Preserve all positions, silhouettes and other details. Use localized eyelid patches with no opacity crossfade.
+
+Final runtime resources: data-mate-poses.webp (source for traced skin), data-mate-body-repair.webp, data-mate-head-0.webp through data-mate-head-3.webp and corresponding -blink.webp files. Source head atlases are retained for the alpha-component packaging script in scripts/prepare-mate-heads.cjs. That helper uses sharp (or the MATE_SHARP module path) and separates existing alpha components without redrawing or rectangular clipping.
