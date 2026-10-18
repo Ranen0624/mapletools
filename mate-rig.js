@@ -80,7 +80,7 @@ export async function mountMateRig(figure,section){
   function paint(still=false){
    size();ctx.setTransform(canvas.width/WIDTH,0,0,canvas.height/HEIGHT,0,0);ctx.clearRect(0,0,WIDTH,HEIGHT);
    const elapsed=time-actionTime,reaction=elapsed>=0&&elapsed<GREETING_DURATION?Math.sin(elapsed/GREETING_DURATION*Math.PI)**2:0;
-   const state=still?POSES.idle:reaction>0&&kind==='sleep'?POSES.read:reaction>0&&kind==='curious'?POSES.hover:sceneAt(time,lastInteraction,hovered,reaction);
+   const state=still?POSES.idle:reaction>0&&['sleep','search'].includes(kind)?POSES.read:reaction>0&&['curious','surprised'].includes(kind)?POSES.hover:sceneAt(time,lastInteraction,hovered,reaction);
    figure.dataset.pose=Object.keys(POSES)[state];
    const motion=still?reactionAt('none',-1):reactionAt(kind,elapsed);
    const base=poseAt(time,x,y,reaction);
