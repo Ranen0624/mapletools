@@ -82,3 +82,16 @@
 .cw-visitor[data-motion="celebrate"].cw-tap img{animation:cw-sprite-hop .9s ease 1}
 @keyframes cw-sprite-hop{0%,100%{transform:translateY(0)}43%{transform:translateY(-38px)}}
 @keyframes cw-sprite-dance{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-12px) rotate(-6deg)}75%{transform:translateY(-12px) rotate(6deg)}}
+
+/* Accessible motion-production overview: counts are grounded in the registered artwork. */
+.cw-animation-plan{margin-top:19px;border:1px solid #b4a5e852;border-radius:12px;padding:12px;color:#d8d7f7;background:#0d1228}
+.cw-animation-plan summary{cursor:pointer;font-size:12px;font-weight:650}
+.cw-animation-plan summary span{font-size:10px;color:#a8e7db;display:inline}
+.cw-animation-plan>p{color:#c4c6dd;line-height:1.6;font-size:11px}
+.cw-motion-plan{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cw-motion-plan section{min-width:0}
+.cw-motion-plan h4{font-size:12px;color:#c9ecff;margin:3px 0 6px}
+.cw-motion-plan ul{margin:0;padding:0;list-style:none}
+.cw-motion-plan li{font-size:10px;padding:4px 0;line-height:1.45;color:#b4b8d2}
+.cw-motion-plan li[data-ready="true"]{color:#a4ead8}
+@media(max-width:450px){.cw-motion-plan{grid-template-columns:1fr}.cw-animation-plan summary span{display:block}}
