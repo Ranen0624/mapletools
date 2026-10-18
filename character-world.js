@@ -1,5 +1,7 @@
 import {mountMateRig} from './mate-rig.js';
 import {MATE_ANIMATIONS,availableAnimations,pendingArtwork} from './mate-animation-catalog.js';
+import {MASCOT_BEHAVIORS,BEHAVIORS_BY_ID} from './mate-behaviors.js';
+import {cardTheme,drawCollectibleCard} from './character-card-art.js';
 
 const API='https://open.api.nexon.com/maplestory/v1/';
 export function formatPower(value){
@@ -38,9 +40,9 @@ function init(){
  const form=get('cw-form'),input=get('cw-name'),keyInput=get('cw-key'),submit=get('cw-submit'),status=get('cw-status'),bubble=get('cw-bubble');
  const portrait=get('cw-avatar'),cardImage=get('cw-card-image'),card=get('cw-card'),profile=get('cw-profile');
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
- let active=null,requestController=null,poseCounter=0,currentPose=0,rig=null;
+ let active=null,requestController=null,currentPose=0,currentEmotion=0,rig=null;
  const phrases={greet:'반가워! 오늘도 좋은 하루야!',curious:'어떤 캐릭터인지 궁금해!',hop:'폴짝! 별을 잡아볼까?',dance:'신나는 춤을 춰 보자!',nod:'응응! 알겠어.',shy:'앗, 부끄러워…',surprised:'와! 정말 놀라운걸?',celebrate:'축하해! 반짝반짝!',search:'마법책에서 찾아보고 있어…',sleep:'조금만 쉬었다 갈게…',summon:'마법진이 열리고 있어!',photograph:'찰칵! 추억을 남겨보자.',land:'사뿐히 착지!',bow:'정중하게 인사할게!',float:'별빛을 타고 떠올라!',farewell:'다음에 또 만나!'};
- function say(kind,text){bubble.textContent=text||phrases[kind]||phrases.greet;mate.dispatchEvent(new CustomEvent('mate-react',{detail:{kind}}));}
+ function say(kind,text){bubble.textContent=text||BEHAVIORS_BY_ID[kind]?.spoken||phrases[kind]||phrases.greet;stage.dataset.action=kind;mate.dispatchEvent(new CustomEvent('mate-react',{detail:{kind}}));}
  mate.addEventListener('click',()=>say(active?'celebrate':'greet'));
  const progress=get('cw-animation-progress'),plan=get('cw-motion-plan');
  if(progress)progress.textContent='('+availableAnimations().length+'종 구현 · '+pendingArtwork().length+'종 원화 필요)';
@@ -55,7 +57,16 @@ function init(){
    group.append(title,items);plan.append(group);
   }
  }
- for(const b of document.querySelectorAll('[data-mate-action]'))b.addEventListener('click',()=>{const type=b.dataset.mateAction;say(type);if(active&&['hop','dance','celebrate'].includes(type))actOnVisitor(type)});
+ const extra=get('cw-extra-actions');
+ if(extra)for(const item of MASCOT_BEHAVIORS){
+  const button=document.createElement('button');
+  button.type='button';button.dataset.mateAction=item.id;button.textContent=item.icon+' '+item.label;
+  extra.append(button);
+ }
+ for(const b of document.querySelectorAll('[data-mate-action]'))b.addEventListener('click',()=>{
+  const type=b.dataset.mateAction;say(type);
+  if(active&&['hop','dance','celebrate','welcome','encourage','wave'].includes(type))actOnVisitor(type);
+ });
  const observer='IntersectionObserver'in window?new IntersectionObserver(items=>{stage.dataset.awake=items[0]?.isIntersecting?'true':'false';rig?.sync();},{rootMargin:'120px'}):null;
  observer?.observe(stage);
  mountMateRig(mate,stage).then(handle=>{rig=handle;if(handle)handle.sync();});
@@ -68,19 +79,27 @@ function init(){
   get('cw-motion').setAttribute('aria-pressed',String(paused));
   rig?.sync();updateAvatarPose();
  });
- const poses=[['A00','E00'],['A06','E02'],['A01','E01'],['A05','E13'],['A07','E02'],['A02','E01'],['A00','E17']];
+ // Distinct body action and facial emotion are separate controls.
+ // Not every combination is supported by the official image endpoint;
+ // unsupported combinations gracefully restore the verified base portrait.
+ const poses=[['A00','기본'],['A06','역동적인 자세'],['A01','다른 자세'],['A07','특수 자세']];
+ const emotions=[['E00','기본'],['E02','미소'],['E13','장난'],['E17','감정 표현']];
  function updateAvatarPose(){
   if(!active)return;
-  const [action,emotion]=poses[currentPose%poses.length];
+  const [action,poseLabel]=poses[currentPose%poses.length];
+  const [emotion,emotionLabel]=emotions[currentEmotion%emotions.length];
   const url=safePortraitUrl(active.image,action,emotion);
   if(!url)return;
+  get('cw-pose-state').textContent='자세: '+poseLabel+' · 표정: '+emotionLabel+' (일부 캐릭터는 동일하게 보일 수 있어요)';
   for(const img of [portrait,cardImage]){
-   img.onerror=()=>{img.onerror=null;img.src=active.image};
+   img.onerror=()=>{img.onerror=null;img.src=active.image;};
    img.src=url;
   }
  }
- function nextPose(){if(!active)return;currentPose=(currentPose+1)%poses.length;updateAvatarPose();say('celebrate','새 포즈를 골랐어!');}
+ function nextPose(){if(!active)return;currentPose=(currentPose+1)%poses.length;updateAvatarPose();say('present','다른 자세를 골랐어!');}
+ function nextEmotion(){if(!active)return;currentEmotion=(currentEmotion+1)%emotions.length;updateAvatarPose();say('wave','표정을 바꿔 볼까?');}
  get('cw-avatar-button').addEventListener('click',nextPose);get('cw-pose').addEventListener('click',nextPose);
+ get('cw-emotion').addEventListener('click',nextEmotion);
  function actOnVisitor(type){
   visitor.dataset.motion=type;
   if(stage.classList.contains('cw-no-motion')||reduced.matches)return;
@@ -117,7 +136,10 @@ function init(){
    if(!img)throw Error('NO_PORTRAIT');
    const statInfo=stat.status==='fulfilled'?stat.value:null,unionInfo=union.status==='fulfilled'?union.value:null;
    active={image:img,name:info.character_name||name,world:info.world_name||'월드 확인 불가',job:info.character_class||'직업 확인 불가',level:info.character_level??null,combat:statCombat(statInfo),union:unionInfo?.union_level??null};
-   currentPose=0;updateAvatarPose();visitor.hidden=false;
+   currentPose=0;currentEmotion=0;updateAvatarPose();visitor.hidden=false;
+   const palette=cardTheme(active.job);
+   for(const surface of [stage,card]){surface.style.setProperty('--cw-accent',palette.accent);surface.style.setProperty('--cw-deep',palette.deep);surface.dataset.classTheme=palette.id;}
+   get('cw-visitor-class').textContent=active.job+' · Lv.'+(active.level??'—');
    visitor.classList.remove('cw-tap');get('cw-visitor-label').textContent=active.name;
    stage.dataset.awake='true';
    get('cw-stage-info').textContent=active.name+' · '+active.job;
@@ -159,30 +181,23 @@ function init(){
  }
  get('cw-capture').addEventListener('click',async()=>{
   if(!active)return;
-  const msg=get('cw-save-status'),canvas=document.createElement('canvas');canvas.width=900;canvas.height=600;
-  const ctx=canvas.getContext('2d');if(!ctx){msg.textContent='이 브라우저에서는 PNG 저장을 지원하지 않아요.';return;}
-  msg.textContent='프로필 카드를 그리고 있어요…';
-  const gradient=ctx.createLinearGradient(0,0,900,600);gradient.addColorStop(0,'#20244d');gradient.addColorStop(.5,'#554b89');gradient.addColorStop(1,'#121f4c');ctx.fillStyle=gradient;ctx.fillRect(0,0,900,600);
-  ctx.strokeStyle='#e5ccff77';ctx.lineWidth=3;ctx.strokeRect(16,16,868,568);
-  for(let i=0;i<90;i++){const x=(i*97+29)%890,y=(i*71+13)%580;ctx.fillStyle=i%4?'#e9eeff90':'#e9b7ff';ctx.beginPath();ctx.arc(x,y,i%9===0?2.8:1,0,Math.PI*2);ctx.fill();}
-  ctx.fillStyle='#eef0ff';ctx.font='bold 28px sans-serif';ctx.fillText('MAPLETOOLS  ·  CHARACTER WORLD',46,61);
-  let included=false;
-  try{const img=await loadForCanvas(cardImage.src);ctx.drawImage(img,22,88,380,380);included=true}catch{}
-  ctx.fillStyle='#bdefff';ctx.font='23px sans-serif';ctx.fillText(active.world,420,189);
-  ctx.fillStyle='#ffffff';wrapText(ctx,active.name,420,258,445,52);
-  ctx.fillStyle='#d7caff';ctx.font='28px sans-serif';ctx.fillText(active.job,420,304);
-  ctx.fillStyle='#c9c9eb';ctx.font='18px sans-serif';ctx.fillText('LEVEL',420,363);ctx.fillText('COMBAT POWER',420,428);ctx.fillText('UNION',420,497);
-  ctx.fillStyle='#ffffff';ctx.font='bold 26px sans-serif';ctx.fillText(active.level??'확인 불가',420,394);ctx.fillText(formatPower(active.combat),420,459);ctx.fillText(active.union??'확인 불가',420,527);
-  ctx.fillStyle='#c6d2f4';ctx.font='17px sans-serif';ctx.fillText('Data based on NEXON Open API',43,552);
-  if(!included){ctx.fillStyle='#ccd2ee';ctx.font='17px sans-serif';ctx.fillText('캐릭터 이미지는 외부 이미지 정책으로 포함되지 않았습니다.',43,485);}
+  const msg=get('cw-save-status'),canvas=document.createElement('canvas');
+  canvas.width=900;canvas.height=1200;
+  const ctx=canvas.getContext('2d');
+  if(!ctx){msg.textContent='이 브라우저에서는 PNG 저장을 지원하지 않아요.';return;}
+  msg.textContent='수집 카드 이미지를 제작하고 있어요…';
+  let portraitImage=null;
+  try{portraitImage=await loadForCanvas(cardImage.src);}catch{}
+  drawCollectibleCard(ctx,active,portraitImage);
   try{
    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
    if(!blob)throw Error('PNG_ENCODE');
-   const blobUrl=URL.createObjectURL(blob),a=document.createElement('a');
-   a.href=blobUrl;a.download='MapleTools_'+active.name.replace(/[^\w가-힣-]/g,'_')+'.png';document.body.append(a);a.click();a.remove();
+   const blobUrl=URL.createObjectURL(blob),link=document.createElement('a');
+   link.href=blobUrl;link.download='MapleTools_'+active.name.replace(/[^\w가-힣-]/g,'_')+'.png';
+   document.body.append(link);link.click();link.remove();
    setTimeout(()=>URL.revokeObjectURL(blobUrl),3000);
-   msg.textContent=included?'PNG로 저장했어요.':'텍스트 카드로 저장했어요. 캐릭터 이미지는 원본 서버의 CORS 정책 때문에 제외됐어요.';
+   msg.textContent=portraitImage?'프로필 카드가 저장됐어요.':'카드를 저장했지만 외부 이미지 정책 때문에 캐릭터 그림은 제외됐어요.';
    say('photograph');
-  }catch{msg.textContent='PNG를 저장하지 못했어요. 브라우저의 다운로드 설정을 확인해 주세요.';}
+  }catch{msg.textContent='PNG 저장에 실패했어요. 브라우저 다운로드 설정을 확인해 주세요.';}
  });
 }
