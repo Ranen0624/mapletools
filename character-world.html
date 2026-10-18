@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>캐릭터 월드 | 메이플툴즈 - 내 캐릭터 소환과 홀로그램 프로필</title>
+<meta name="description" content="실제 메이플스토리 캐릭터를 소환해 마스코트와 만나는 인터랙티브 공간. 움직이는 홀로그램 프로필 카드까지.">
+<meta name="theme-color" content="#0c1020">
+<link rel="canonical" href="https://mapletools.kr/character-world.html">
+<link rel="icon" type="image/svg+xml" href="assets/mapletools-mark.svg">
+<link rel="stylesheet" href="styles.css?v=nav-consistency-1">
+<link rel="stylesheet" href="character-world.css?v=1">
+<script type="module" src="character-world.js?v=1"></script>
+</head><body>
+<a class="skip" href="#world-main">본문으로 이동</a>
+<header class="site-header"><div class="container header-inner">
+<a class="brand" href="index.html"><img class="brand-mark" src="assets/mapletools-mark.svg" width="38" height="38" alt=""><span>Maple<span class="brand-light">Tools</span></span></a>
+<nav id="main-nav" aria-label="주 메뉴"><a href="index.html">홈</a><a href="character-world.html" aria-current="page">캐릭터 월드</a><a href="index.html#features">주요 기능</a><a href="terms.html">이용 안내</a></nav>
+<a class="button small header-cta" href="index.html#download">다운로드 ↗</a>
+<button type="button" class="menu-toggle" aria-label="메뉴 열기" aria-controls="main-nav" aria-expanded="false"><span></span><span></span></button>
+</div></header>
+<main id="world-main" class="container cw-page">
+<section class="cw-intro">
+<p class="eyebrow">INTERACTIVE CHARACTER WORLD · BETA</p>
+<h1>내 캐릭터가 찾아오는<br><span>별빛 세계.</span></h1>
+<p>실제 캐릭터를 불러오면 메이플툴즈 메이트가 환영해요. 표정과 동작을 바꾸고, 빛나는 프로필 카드를 만들어보세요.</p>
+</section>
+<div class="cw-layout">
+<section class="cw-control" aria-label="캐릭터 검색 및 상호작용">
+<h2>캐릭터 소환</h2>
+<form id="cw-form">
+<label for="cw-name">캐릭터 닉네임</label>
+<input id="cw-name" name="name" type="text" required maxlength="24" placeholder="메이플스토리 닉네임" autocomplete="off">
+<label for="cw-key">내 NEXON Open API 키</label>
+<input id="cw-key" name="api-key" type="password" required spellcheck="false" autocomplete="off" placeholder="이 화면에서만 사용">
+<button class="button primary cw-submit" id="cw-submit" type="submit">내 캐릭터 소환하기 ✦</button>
+</form>
+<p id="cw-status" class="cw-status" role="status" aria-live="polite">닉네임과 본인 API 키로 실제 캐릭터를 조회합니다.</p>
+<p class="cw-small">API 키는 이 화면에서만 요청에 사용하고 저장하거나 홈페이지 서버로 전송하지 않습니다. 공용 PC에서는 입력하지 않는 것을 권장해요. <a href="https://openapi.nexon.com/" target="_blank" rel="noopener noreferrer">API 키 발급 안내 ↗</a></p>
+<div class="cw-actions" aria-labelledby="cw-action-title">
+<h3 id="cw-action-title">마스코트와 놀기</h3>
+<div class="cw-action-grid">
+<button type="button" data-mate-action="greet">👋 인사</button>
+<button type="button" data-mate-action="curious">🔍 궁금</button>
+<button type="button" data-mate-action="hop">✨ 폴짝</button>
+<button type="button" data-mate-action="dance">🎶 춤추기</button>
+<button type="button" data-mate-action="nod">😊 끄덕</button>
+<button type="button" data-mate-action="shy">💗 부끄럼</button>
+<button type="button" data-mate-action="surprised">❗ 깜짝</button>
+<button type="button" data-mate-action="celebrate">🎉 축하</button>
+<button type="button" data-mate-action="search">📖 고민</button>
+<button type="button" data-mate-action="sleep">💤 졸기</button>
+</div>
+</div>
+</section>
+<section id="cw-playground" class="cw-playground" data-awake="true" aria-label="캐릭터와 마스코트 만남의 무대">
+<div class="cw-starfield" aria-hidden="true"></div>
+<div class="cw-stage-tag">MAPLETOOLS · STARDUST ROOM</div>
+<p id="cw-bubble" class="cw-bubble" role="status">어서 와! 누구를 불러볼까?</p>
+<div class="cw-actors">
+<button type="button" id="cw-mate" class="data-mate cw-mate" aria-label="마스코트에게 인사하기">
+<span class="mate-body">
+<canvas class="mate-canvas" width="442" height="523" aria-hidden="true"></canvas>
+<img src="assets/data-mate.webp" alt="메이플툴즈 별빛 마스코트" width="512" height="606">
+<img class="mate-blink" src="assets/data-mate-blink.webp" alt="" aria-hidden="true" width="512" height="606">
+</span><span class="mate-orb-ring" aria-hidden="true"></span><span class="mate-orb-light" aria-hidden="true"></span>
+</button>
+<div id="cw-visitor" class="cw-visitor" hidden aria-label="소환한 내 캐릭터">
+<div class="cw-portal" aria-hidden="true"></div>
+<button type="button" id="cw-avatar-button" aria-label="캐릭터 표정 바꾸기"><img id="cw-avatar" alt="소환한 메이플 캐릭터" width="240" height="240"></button>
+<span id="cw-visitor-label"></span>
+</div>
+</div>
+<div class="cw-stage-footer"><span id="cw-stage-info">캐릭터를 소환하면 함께 놀 수 있어요.</span><button type="button" id="cw-motion" aria-pressed="false">움직임 끄기</button></div>
+</section>
+</div>
+<section id="cw-profile" class="cw-profile" hidden aria-labelledby="cw-profile-title">
+<div class="cw-profile-copy"><p class="eyebrow">HOLOGRAPHIC CHARACTER CARD</p><h2 id="cw-profile-title">내 캐릭터의 빛나는 기록</h2><p>카드를 기울이고 캐릭터 표정을 바꿔 보세요. API에서 확인된 값만 표시합니다.</p>
+<div class="cw-profile-actions"><button type="button" id="cw-capture" class="button primary">프로필 카드 PNG 저장</button><button type="button" id="cw-pose" class="button">포즈 바꾸기</button></div><p id="cw-save-status" class="cw-small" role="status"></p>
+</div>
+<div id="cw-card" class="cw-card" tabindex="0" role="img" aria-label="메이플스토리 캐릭터의 홀로그램 프로필 카드">
+<div class="cw-card-glow"></div><div class="cw-card-top"><b>MAPLETOOLS</b><span>CHARACTER ID · OFFICIAL DATA</span></div>
+<div class="cw-card-main"><img id="cw-card-image" alt="" width="240" height="240"><div><span id="cw-card-world">WORLD</span><h3 id="cw-card-name"></h3><p id="cw-card-job"></p></div></div>
+<div class="cw-card-stats"><div><small>LEVEL</small><strong id="cw-card-level">—</strong></div><div><small>COMBAT POWER</small><strong id="cw-card-combat">—</strong></div><div><small>UNION</small><strong id="cw-card-union">—</strong></div></div>
+<div class="cw-card-bottom"><span>Data based on NEXON Open API</span><span>✦ ✧ ✦</span></div>
+</div>
+</section>
+<section class="cw-notice"><h2>이 기능에 대해</h2><p>입력한 API 키를 브라우저 메모리에서만 사용합니다. 캐릭터 정보는 조회 시점과 API 갱신에 따라 달라질 수 있습니다. 마스코트의 추가 반응은 기존 원화의 형태를 변형하지 않는 방식으로 구현했으며, 완전한 전신 걷기·앉기 동작은 별도 원화가 필요합니다.</p><p>현재 본인 계정 전체를 자동으로 공개하는 기능은 제공하지 않습니다. &middot; Data based on NEXON Open API</p></section>
+</main>
+<footer class="cw-footer"><div class="container"><a href="index.html">← 메이플툴즈 홈</a><span>MAPLETOOLS CHARACTER WORLD · BETA</span></div></footer>
+<script src="app.js?v=nav-consistency-1" defer></script>
+</body></html>
