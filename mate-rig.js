@@ -1,6 +1,6 @@
 import {WIDTH,HEIGHT,POSES,CROPS,HEAD_PLACEMENT,HEAD_EYES,NECKS,HAND_PATH,ARM_PATH,WRIST,ELBOW,framePoint} from './mate-parts.js';
 import {blinkAt,drawEffects} from './mate-effects.js';
-import {greetingAt,GREETING_DURATION} from './mate-motion.js';
+import {greetingAt,GREETING_DURATION,reactionAt} from './mate-motion.js';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const rad=degrees=>degrees*Math.PI/180;
 export function poseAt(time,x=0,y=0,reaction=0){
@@ -41,7 +41,7 @@ export function createMatePainter(open,closed,atlas,layers={}){
  const hand=atlas?skin(HAND_PATH):null,arm=atlas?skin(ARM_PATH):null,wrist=framePoint(2,...WRIST),elbow=framePoint(2,...ELBOW);
  return (ctx,p,state=0,still=false)=>{
   const age=p.actionAge??((p.time||0)%8),greeting=state===2&&!still?greetingAt(age):greetingAt(-1);
-  ctx.save();ctx.translate(256,510+(still?0:(p.bodyY||0)+greeting.lift));ctx.rotate(still?0:(p.body||0)+greeting.body);ctx.translate(-256,-510);
+  ctx.save();ctx.translate(256+(still?0:(p.shiftX||0)),510+(still?0:(p.bodyY||0)+greeting.lift));ctx.rotate(still?0:(p.body||0)+greeting.body);ctx.translate(-256,-510);
   if(!bodyAtlas||!headAtlas){ctx.drawImage(full[state],0,0);ctx.restore();return;}
   ctx.drawImage(bodies[state],0,0);
   const [cx,cy,sw,sh]=CROPS[state],neck=[24+NECKS[state][0]*464/sw,24+NECKS[state][1]*550/sh];
@@ -80,9 +80,11 @@ export async function mountMateRig(figure,section){
   function paint(still=false){
    size();ctx.setTransform(canvas.width/WIDTH,0,0,canvas.height/HEIGHT,0,0);ctx.clearRect(0,0,WIDTH,HEIGHT);
    const elapsed=time-actionTime,reaction=elapsed>=0&&elapsed<GREETING_DURATION?Math.sin(elapsed/GREETING_DURATION*Math.PI)**2:0;
-   const state=still?POSES.idle:sceneAt(time,lastInteraction,hovered,reaction);
+   const state=still?POSES.idle:reaction>0&&['sleep','search'].includes(kind)?POSES.read:reaction>0&&['curious','surprised'].includes(kind)?POSES.hover:sceneAt(time,lastInteraction,hovered,reaction);
    figure.dataset.pose=Object.keys(POSES)[state];
-   draw(ctx,still?{}:{...poseAt(time,x,y,reaction),actionAge:elapsed},state,still);
+   const motion=still?reactionAt('none',-1):reactionAt(kind,elapsed);
+   const base=poseAt(time,x,y,reaction);
+   draw(ctx,still?{}:{...base,shiftX:motion.shiftX,bodyY:base.bodyY+motion.lift,body:base.body+motion.body,head:base.head+motion.head,actionAge:kind==='greet'?elapsed:-1},state,still);
   }
   function tick(now){
    frame=0;if(!active||disposed)return;
