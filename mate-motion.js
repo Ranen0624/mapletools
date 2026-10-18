@@ -38,6 +38,24 @@ export function reactionAt(kind,age){
   case 'bow':return {shiftX:4*envelope,lift:3*envelope,body:rad(10)*envelope,head:rad(7)*envelope};
   case 'float':return {shiftX:5*Math.sin(age*1.4)*envelope,lift:-18*envelope-4*Math.sin(age*5)*envelope,body:rad(2.6)*wave(.43),head:rad(-2)*wave(.43)};
   case 'farewell':return {shiftX:-5*envelope,lift:-2*envelope,body:rad(-2.5)*wave(.65),head:rad(2)*envelope};
+  // Frequently used human gestures. Safe whole-body translations/rotations only.
+  // These do not claim to be additional painted full-body poses.
+  case 'wave':return {shiftX:3*Math.sin(age*3.7)*envelope,lift:-3*envelope,body:rad(-2)*wave(.8),head:rad(2.2)*wave(.5)};
+  case 'point':return {shiftX:8*envelope,lift:-2*envelope,body:rad(5)*envelope,head:rad(-4)*envelope};
+  case 'present':return {shiftX:8*envelope,lift:-7*envelope,body:rad(4)*envelope,head:rad(-3)*envelope};
+  case 'listen':return {shiftX:4*envelope,lift:1*envelope,body:rad(2)*envelope,head:rad(7)*envelope};
+  case 'think':return {shiftX:-2*envelope,lift:1*envelope,body:rad(-2)*envelope,head:rad(4)*wave(.45)};
+  case 'agree':return {shiftX:0,lift:1*envelope,body:rad(1.2)*wave(1),head:rad(7)*wave(1.1)};
+  case 'disagree':return {shiftX:0,lift:0,body:rad(-1.5)*envelope,head:rad(9)*wave(1.3)};
+  case 'peek':return {shiftX:12*envelope,lift:-3*envelope,body:rad(6)*envelope,head:rad(-7)*envelope};
+  case 'proud':return {shiftX:0,lift:-5*envelope,body:rad(-4)*envelope,head:rad(5)*envelope};
+  case 'thanks':return {shiftX:3*envelope,lift:3*envelope,body:rad(7)*envelope,head:rad(5)*envelope};
+  case 'encourage':return {shiftX:5*wave(.65),lift:-10*Math.abs(wave(.9)),body:rad(3)*wave(.8),head:rad(-4)*wave(.8)};
+  case 'relax':return {shiftX:0,lift:4*envelope,body:rad(-3)*envelope,head:rad(4)*envelope};
+  case 'welcome':return {shiftX:8*wave(.65),lift:-9*Math.abs(wave(.75)),body:rad(-3)*wave(.7),head:rad(2)*wave(.5)};
+  case 'reveal':return {shiftX:5*envelope,lift:-12*envelope,body:rad(3)*wave(.65),head:rad(-4)*envelope};
+  case 'ponder':return {shiftX:-3*envelope,lift:1*envelope,body:rad(-2)*wave(.45),head:rad(5)*wave(.3)};
+  case 'oh':return {shiftX:-14*envelope,lift:-7*envelope,body:rad(-6)*envelope,head:rad(8)*envelope};
   case 'greet':
   default:return zero;
  }
@@ -56,6 +74,11 @@ export function gestureAt(kind,age){
  if(kind==='celebrate'||kind==='summon'){
   return {elbow:rad(3.1)*e*Math.sin(age*3.2),wrist:rad(7.5)*e*Math.sin(age*4.4)};
  }
- if(kind==='photograph')return {elbow:rad(-2)*e,wrist:rad(4)*e};
+ if(['wave','welcome','encourage'].includes(kind))
+  return {elbow:rad(6)*e*Math.sin(age*5.8),wrist:rad(12)*e*Math.sin(Math.max(0,age-.14)*7)};
+ if(['present','reveal','point'].includes(kind))
+  return {elbow:rad(-4.5)*e,wrist:rad(7)*e};
+ if(kind==='thanks')return {elbow:rad(-2.5)*e,wrist:rad(5)*e*Math.sin(age*4)};
+  if(kind==='photograph')return {elbow:rad(-2)*e,wrist:rad(4)*e};
  return {elbow:0,wrist:0};
 }
