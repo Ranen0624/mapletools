@@ -1,4 +1,5 @@
 import {mountMateRig} from './mate-rig.js';
+import {MATE_ANIMATIONS,availableAnimations,pendingArtwork} from './mate-animation-catalog.js';
 
 const API='https://open.api.nexon.com/maplestory/v1/';
 export function formatPower(value){
@@ -38,9 +39,22 @@ function init(){
  const portrait=get('cw-avatar'),cardImage=get('cw-card-image'),card=get('cw-card'),profile=get('cw-profile');
  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
  let active=null,requestController=null,poseCounter=0,currentPose=0,rig=null;
- const phrases={greet:'반가워! 오늘도 좋은 하루야!',curious:'어떤 캐릭터인지 궁금해!',hop:'폴짝! 별을 잡아볼까?',dance:'신나는 춤을 춰 보자!',nod:'응응! 알겠어.',shy:'앗, 부끄러워…',surprised:'와! 정말 놀라운걸?',celebrate:'축하해! 반짝반짝!',search:'마법책에서 찾아보고 있어…',sleep:'조금만 쉬었다 갈게…',summon:'마법진이 열리고 있어!',photograph:'찰칵! 추억을 남겨보자.'};
+ const phrases={greet:'반가워! 오늘도 좋은 하루야!',curious:'어떤 캐릭터인지 궁금해!',hop:'폴짝! 별을 잡아볼까?',dance:'신나는 춤을 춰 보자!',nod:'응응! 알겠어.',shy:'앗, 부끄러워…',surprised:'와! 정말 놀라운걸?',celebrate:'축하해! 반짝반짝!',search:'마법책에서 찾아보고 있어…',sleep:'조금만 쉬었다 갈게…',summon:'마법진이 열리고 있어!',photograph:'찰칵! 추억을 남겨보자.',land:'사뿐히 착지!',bow:'정중하게 인사할게!',float:'별빛을 타고 떠올라!',farewell:'다음에 또 만나!'};
  function say(kind,text){bubble.textContent=text||phrases[kind]||phrases.greet;mate.dispatchEvent(new CustomEvent('mate-react',{detail:{kind}}));}
  mate.addEventListener('click',()=>say(active?'celebrate':'greet'));
+ const progress=get('cw-animation-progress'),plan=get('cw-motion-plan');
+ if(progress)progress.textContent='('+availableAnimations().length+'종 구현 · '+pendingArtwork().length+'종 원화 필요)';
+ if(plan){
+  const labels={life:'기본 생활',movement:'이동',emotion:'감정',special:'상호작용'};
+  for(const [key,label] of Object.entries(labels)){
+   const group=document.createElement('section'),title=document.createElement('h4'),items=document.createElement('ul');
+   title.textContent=label;
+   for(const action of MATE_ANIMATIONS.filter(x=>x.group===key)){
+    const li=document.createElement('li');li.textContent=action.label+' — '+(action.status==='ready'?'동작 구현':'추가 원화 필요');li.dataset.ready=String(action.status==='ready');items.append(li);
+   }
+   group.append(title,items);plan.append(group);
+  }
+ }
  for(const b of document.querySelectorAll('[data-mate-action]'))b.addEventListener('click',()=>{const type=b.dataset.mateAction;say(type);if(active&&['hop','dance','celebrate'].includes(type))actOnVisitor(type)});
  const observer='IntersectionObserver'in window?new IntersectionObserver(items=>{stage.dataset.awake=items[0]?.isIntersecting?'true':'false';rig?.sync();},{rootMargin:'120px'}):null;
  observer?.observe(stage);
