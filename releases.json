@@ -13,19 +13,19 @@
     "validation": "63 application modules compiled; native EXE home/equipment/union/coordi self-test passed; source and private-key scan passed."
   },
   "public_android": {
-    "version": "1.0.4",
-    "file": "downloads/MapleTools_Android_Public_1.0.4.apk",
-    "bytes": 24703061,
-    "sha256": "11da80580a8eb9d5323536b6f091f29d50fb44f1d55e3281bedec5f3955b284e",
+    "version": "1.0.5",
+    "file": "downloads/MapleTools_Android_Public_1.0.5.apk",
+    "bytes": 24703173,
+    "sha256": "ff2b9535cf80114f7d155cd5a7afdfbefd72ca0c5e8052f192fa78e31ef1f260",
     "public_download": true,
     "requires_user_key": true,
     "minimum_android": "8.0",
     "abi": "arm64-v8a",
     "package_type": "R8 optimized APK with 25 Cython ARM64 application modules",
     "device_tested": false,
-    "version_code": 15,
+    "version_code": 16,
     "emulator_tested": true,
-    "validation": "Android 35 x86_64 emulator: native-module loading, selfcheck, bootstrap, config validation, WebView recommendations and set/reward selection; ARM64 signature verified, same upgrade signer; physical device not tested."
+    "validation": "Android 15 x86_64 installed WebView: visible outfit scope, date/world request parameters and retained conditions; source assets and ARM64 upgrade signer verified. Physical device not tested."
   },
   "web_demo_reference_version": "2.0.4",
   "patch_notes": "updates.html"

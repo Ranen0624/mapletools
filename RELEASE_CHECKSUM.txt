@@ -1,2 +1,2 @@
 cfa6255d610d4c8bdf4c945879cc50f7547b16857e8c332f454399b70a98d756  downloads/MapleTools_PC_Public_2.0.4.zip
-11da80580a8eb9d5323536b6f091f29d50fb44f1d55e3281bedec5f3955b284e  downloads/MapleTools_Android_Public_1.0.4.apk
+ff2b9535cf80114f7d155cd5a7afdfbefd72ca0c5e8052f192fa78e31ef1f260  downloads/MapleTools_Android_Public_1.0.5.apk

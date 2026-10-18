@@ -10,7 +10,7 @@
 | 플랫폼 | 버전 | 배포 파일 |
 | --- | --- | --- |
 | Windows | **2.0.4** | [PC ZIP](downloads/MapleTools_PC_Public_2.0.4.zip) |
-| Android | **1.0.4** | [Android APK](downloads/MapleTools_Android_Public_1.0.4.apk) |
+| Android | **1.0.5** | [Android APK](downloads/MapleTools_Android_Public_1.0.5.apk) |
 
 PC는 ZIP 전체를 풀고 `MapleTools.exe`를 실행합니다.
 Android는 Android 8.0 이상 ARM64를 지원합니다. 두 공개판 모두 사용자의 NEXON Open API 키를 설정해야 합니다.
