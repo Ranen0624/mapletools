@@ -9,8 +9,8 @@
 
 | 플랫폼 | 버전 | 배포 파일 |
 | --- | --- | --- |
-| Windows | **2.0.3** | [PC ZIP](downloads/MapleTools_PC_Public_2.0.3.zip) |
-| Android | **1.0.3** | [Android APK](downloads/MapleTools_Android_Public_1.0.3.apk) |
+| Windows | **2.0.4** | [PC ZIP](downloads/MapleTools_PC_Public_2.0.4.zip) |
+| Android | **1.0.4** | [Android APK](downloads/MapleTools_Android_Public_1.0.4.apk) |
 
 PC는 ZIP 전체를 풀고 `MapleTools.exe`를 실행합니다.
 Android는 Android 8.0 이상 ARM64를 지원합니다. 두 공개판 모두 사용자의 NEXON Open API 키를 설정해야 합니다.
@@ -20,6 +20,7 @@ Android는 Android 8.0 이상 ARM64를 지원합니다. 두 공개판 모두 사
 
 - 장비 이름·옵션과 성장 조건을 조합한 캐릭터 검색
 - 레벨·직업 조합으로 유니온 챔피언 후보 검색
+- Android 통합 장비 검색, 입력칸 비우기·조건 복원·휴대폰/태블릿 화면 배치
 - 코디 일부 이름 추천·아이콘, 프리스타일·헤어·성형·피부 조건 검색과 코디룸 미리보기
 - 코디 세트·패키지·이벤트 623개 그룹과 착용 가능한 추가 보상 확인
 - 검색 결과 CSV, 통계, 저장·이어하기 및 변화 기록
@@ -42,8 +43,8 @@ GitHub Pages는 `main` 브랜치의 루트 디렉터리를 배포합니다. `CNA
 
 ## 검증
 
-- PC 컴파일된 EXE의 홈·장비·유니온·코디 화면과 코디 추천 아이콘 확인
-- Android 에뮬레이터의 네이티브 모듈 로딩·엔진 검사 통과; 실제 ARM64 휴대폰 검색은 미검증
+- PC 회귀 27개·Qt 사용 흐름 8개와 컴파일된 EXE의 홈·장비·유니온·코디 화면 확인
+- Android 에뮬레이터의 네이티브 엔진·사용 흐름 28개 통과; 실물 ARM64 휴대폰 검색은 미검증
 - 공개 ZIP/APK 무결성, 개인 키·애플리케이션 소스 제외, 홈페이지 다운로드 해시 검증
 - `npm test`: 웹 예시 검색·코디 판정·DOM·CSV·메이트 검사
 - `python -X utf8 tests/check_site.py`: 내부 링크·버전·공개 파일 해시·JavaScript 구문 검사

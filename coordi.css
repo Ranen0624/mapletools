@@ -25,3 +25,6 @@
 @media(min-width:1101px){.coordi-left-column>.pc-card:last-child>.pc-card-body{padding:8px}.coordi-left-column details{margin:3px 0}.coordi-left-column .coordi-stage{padding:6px}.coordi-left-column .outfit-camera{height:150px}.coordi-slot-list{margin:3px 0}.coordi-left-column #coordi-preview-retry{padding:6px}.coordi-left-column #coordi-selected{margin:4px 0;min-height:40px}.coordi-left-column #coordi-selected-title{margin:2px 0}.coordi-left-column #coordi-slot-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(min-width:1101px){#coordi-slot-list button{min-height:24px;height:24px;padding:3px 5px}.coordi-fields input,.coordi-fields select{min-height:30px;height:30px}.coordi-left-column>.pc-card:last-child>.pc-card-body{padding-top:4px;padding-bottom:4px}}
 @media(min-width:1101px){.coordi-left-column>.pc-card:last-child>.pc-card-body{padding-top:0;padding-bottom:0}}
+
+/* Stacked cards retain their content height instead of collapsing the scope form. */
+@media(max-width:1100px){.coordi-conditions{grid-auto-rows:max-content;align-content:start}}

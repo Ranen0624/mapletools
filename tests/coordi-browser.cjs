@@ -25,5 +25,5 @@ const{chromium}=require('playwright'),assert=require('node:assert/strict'),fs=re
  await p.setViewportSize({width:1440,height:1000});await p.goto(base+'index.html?v=coordi-2263-1');await p.click('[data-feature=coordi]');assert((await p.locator('#feature-panel a').getAttribute('href')).startsWith('coordi.html'));assert.equal(await p.locator('.coordi-intro').count(),0);
  await p.locator('iframe.interactive-frame').scrollIntoViewIfNeeded();const frame=p.frameLocator('iframe.interactive-frame');await frame.locator('.home-coordi a').click();await frame.locator('#coordi-example').click();await frame.locator('#coordi-search').click();assert.equal(await frame.locator('#coordi-rows tr').count(),3);assert(await frame.locator('html').evaluate(e=>e.classList.contains('is-embedded')));
  assert.deepEqual(errors,[]);const result={base,report,errors,embeddedCoordi:true,csvDownload:true,originalIllustration:true};await fs.writeFile(path.join(out,'report.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify({screens:report.length,errors,embeddedCoordi:true,csvDownload:true}));
- }finally{await b.close();}
+ }catch(e){console.log('FAILED VIEWPORT',p.viewportSize());await p.screenshot({path:path.join(out,'failure.png')});throw e;}finally{await b.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

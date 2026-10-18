@@ -35,13 +35,13 @@ for name,p in pages.items():
   links+=1
 release=json.loads((ROOT/'releases.json').read_text())
 public_files=set()
-for key,version in [('public_windows','2.0.3'),('public_android','1.0.3')]:
+for key,version in [('public_windows','2.0.4'),('public_android','1.0.4')]:
  item=release[key]; data=(ROOT/item['file']).read_bytes()
  assert item['version']==version and item['public_download'] and item['requires_user_key']
  assert len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
  assert item['file'] in pages['index.html'].links
  public_files.add(item['file'])
-assert release['web_demo_reference_version']=='2.0.3'
+assert release['web_demo_reference_version']=='2.0.4'
 dev_manifest=ROOT/'developer-builds.json'
 if dev_manifest.exists():
  item=json.loads(dev_manifest.read_text())['android'];data=(ROOT/item['file']).read_bytes()
@@ -49,7 +49,7 @@ if dev_manifest.exists():
  assert len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
  public_files.add(item['file'])
 text=(ROOT/'index.html').read_text()+(ROOT/'app.js').read_text()
-for term in ['장비','유니온','코디','전투력','HEXA','모아보기','2.0.3','1.0.3','제논','데몬어벤져']:assert term in text,term
+for term in ['장비','유니온','코디','전투력','HEXA','모아보기','2.0.4','1.0.4','제논','데몬어벤져']:assert term in text,term
 for name in ['app.js','demo.js','demo-engine.js','coordi.js','coordi-engine.js','coordi-picker.js','data-mate.js','csv-worker.js','csv-statistics.js','mate-rig.js']:subprocess.run(['node','--check',str(ROOT/name)],check=True)
 # Only verified public release files may be added under downloads.
 changed=subprocess.check_output(['git','status','--porcelain','--no-renames','--untracked-files=all'],cwd=ROOT,text=True)
