@@ -1,6 +1,6 @@
 import {WIDTH,HEIGHT,POSES,CROPS,HEAD_PLACEMENT,HEAD_EYES,NECKS,HAND_PATH,ARM_PATH,WRIST,ELBOW,framePoint} from './mate-parts.js';
 import {blinkAt,drawEffects} from './mate-effects.js';
-import {greetingAt,GREETING_DURATION,reactionAt} from './mate-motion.js';
+import {greetingAt,GREETING_DURATION,reactionAt,gestureAt} from './mate-motion.js';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const rad=degrees=>degrees*Math.PI/180;
 export function poseAt(time,x=0,y=0,reaction=0){
@@ -40,7 +40,7 @@ export function createMatePainter(open,closed,atlas,layers={}){
  }
  const hand=atlas?skin(HAND_PATH):null,arm=atlas?skin(ARM_PATH):null,wrist=framePoint(2,...WRIST),elbow=framePoint(2,...ELBOW);
  return (ctx,p,state=0,still=false)=>{
-  const age=p.actionAge??((p.time||0)%8),greeting=state===2&&!still?greetingAt(age):greetingAt(-1);
+  const age=p.actionAge??((p.time||0)%8),greeting=state===2&&!still&&p.actionKind==='greet'?greetingAt(age):greetingAt(-1);
   ctx.save();ctx.translate(256+(still?0:(p.shiftX||0)),510+(still?0:(p.bodyY||0)+greeting.lift));ctx.rotate(still?0:(p.body||0)+greeting.body);ctx.translate(-256,-510);
   if(!bodyAtlas||!headAtlas){ctx.drawImage(full[state],0,0);ctx.restore();return;}
   ctx.drawImage(bodies[state],0,0);
@@ -53,7 +53,7 @@ export function createMatePainter(open,closed,atlas,layers={}){
   if(state===1){ctx.save();ctx.beginPath();ctx.moveTo(273,319);ctx.lineTo(292,267);ctx.lineTo(313,256);ctx.lineTo(319,272);ctx.lineTo(304,318);ctx.closePath();ctx.clip();ctx.drawImage(bodies[state],0,0);ctx.restore();}
   if(state===3){ctx.save();ctx.beginPath();ctx.rect(231,310,160,100);ctx.clip();ctx.drawImage(bodies[state],0,0);ctx.restore();}
   if(state===2&&hand){
-   const elbowAngle=greeting.elbow,wristAngle=greeting.wrist;
+   const elbowAngle=p.actionKind==='greet'?greeting.elbow:(p.gesture?.elbow||0),wristAngle=p.actionKind==='greet'?greeting.wrist:(p.gesture?.wrist||0);
    drawJoint(ctx,elbow,elbowAngle,()=>{ctx.drawImage(arm,0,0);drawJoint(ctx,wrist,wristAngle,()=>ctx.drawImage(hand,0,0));});
   }
   if(!still)drawEffects(ctx,t,state,p.reaction||0);ctx.restore();
@@ -84,7 +84,7 @@ export async function mountMateRig(figure,section){
    figure.dataset.pose=Object.keys(POSES)[state];
    const motion=still?reactionAt('none',-1):reactionAt(kind,elapsed);
    const base=poseAt(time,x,y,reaction);
-   draw(ctx,still?{}:{...base,shiftX:motion.shiftX,bodyY:base.bodyY+motion.lift,body:base.body+motion.body,head:base.head+motion.head,actionAge:kind==='greet'?elapsed:-1},state,still);
+   draw(ctx,still?{}:{...base,shiftX:motion.shiftX,bodyY:base.bodyY+motion.lift,body:base.body+motion.body,head:base.head+motion.head,actionAge:elapsed,actionKind:kind,gesture:gestureAt(kind,elapsed)},state,still);
   }
   function tick(now){
    frame=0;if(!active||disposed)return;
