@@ -64,6 +64,7 @@ export async function mountMateRig(figure,section){
  const canvas=figure.querySelector('.mate-canvas');if(!canvas)return null;
  let ctx;try{ctx=canvas.getContext('2d',{alpha:true});}catch{return null;}if(!ctx)return null;
  let disposed=false,active=false,frame=0,lastFrame=0,time=0,actionTime=-100,lastInteraction=0,kind='greet',hovered=false;
+ let nextAmbient=15,ambientIndex=0;const ambientOrder=['curious','nod','float','search','shy','bow','sleep','greet'];
  let x=0,y=0,targetX=0,targetY=0,drag=null,offsetX=0,offsetY=0,suppressClickUntil=0;
  const cleanups=[],on=(target,name,fn,options)=>{target.addEventListener(name,fn,options);cleanups.push(()=>target.removeEventListener(name,fn,options));};
  const cancel=()=>{cancelAnimationFrame(frame);frame=0;lastFrame=0;};
@@ -90,6 +91,9 @@ export async function mountMateRig(figure,section){
    frame=0;if(!active||disposed)return;
    if(!lastFrame||now-lastFrame>=1000/30){
     const dt=lastFrame?Math.min((now-lastFrame)/1000,.05):1/30;lastFrame=now;time+=dt;
+    if(time>=nextAmbient&&!hovered&&!drag&&time-lastInteraction>8&&time-actionTime>GREETING_DURATION){
+     kind=ambientOrder[ambientIndex++%ambientOrder.length];actionTime=time;nextAmbient=time+13+ambientIndex%5*2;
+    }
     const easing=1-Math.exp(-dt*7);x+=(targetX-x)*easing;y+=(targetY-y)*easing;
     paint();
    }
@@ -114,7 +118,7 @@ export async function mountMateRig(figure,section){
   on(figure,'pointercancel',()=>{releaseDrag();reset();});on(figure,'lostpointercapture',()=>{releaseDrag();reset();});
   on(figure,'click',event=>{if(event.timeStamp<suppressClickUntil){event.preventDefault();event.stopImmediatePropagation();}},true);
   on(figure,'keydown',event=>{if(event.key==='Escape')resetPosition();});
-  on(figure,'mate-react',event=>{if(!active)return;kind=event.detail?.kind||'greet';actionTime=time;lastInteraction=time;});
+  on(figure,'mate-react',event=>{if(!active)return;kind=event.detail?.kind||'greet';actionTime=time;lastInteraction=time;nextAmbient=time+17;});
   const observer=new MutationObserver(sync);observer.observe(section,{attributes:true,attributeFilter:['data-awake']});observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});cleanups.push(()=>observer.disconnect());
   on(document,'visibilitychange',sync);on(window,'resize',()=>{resetPosition();if(!active)paint(true);},{passive:true});
   if(preference.addEventListener)on(preference,'change',sync);
