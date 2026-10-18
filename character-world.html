@@ -7,8 +7,8 @@
 <link rel="canonical" href="https://mapletools.kr/character-world.html">
 <link rel="icon" type="image/svg+xml" href="assets/mapletools-mark.svg">
 <link rel="stylesheet" href="styles.css?v=nav-consistency-1">
-<link rel="stylesheet" href="character-world.css?v=2">
-<script type="module" src="character-world.js?v=2"></script>
+<link rel="stylesheet" href="character-world.css?v=3">
+<script type="module" src="character-world.js?v=3"></script>
 </head><body>
 <a class="skip" href="#world-main">본문으로 이동</a>
 <header class="site-header"><div class="container header-inner">
@@ -36,7 +36,7 @@
 <p id="cw-status" class="cw-status" role="status" aria-live="polite">닉네임과 본인 API 키로 실제 캐릭터를 조회합니다.</p>
 <p class="cw-small">API 키는 이 화면에서만 요청에 사용하고 저장하거나 홈페이지 서버로 전송하지 않습니다. 공용 PC에서는 입력하지 않는 것을 권장해요. <a href="https://openapi.nexon.com/" target="_blank" rel="noopener noreferrer">API 키 발급 안내 ↗</a></p>
 <div class="cw-actions" aria-labelledby="cw-action-title">
-<h3 id="cw-action-title">마스코트와 놀기</h3>
+<h3 id="cw-action-title">마스코트와 놀기</h3><p class="cw-small">기존 원화의 4가지 표정·자세를 활용한 생활 동작이에요. 새 전신 원화가 필요한 자세는 별도로 제작 중입니다.</p>
 <div class="cw-action-grid">
 <button type="button" data-mate-action="greet">👋 인사</button>
 <button type="button" data-mate-action="curious">🔍 궁금</button>
@@ -53,7 +53,7 @@
 <button type="button" data-mate-action="float">☁️ 둥둥 부유</button>
 <button type="button" data-mate-action="farewell">👋 배웅하기</button>
 </div>
-<details class="cw-animation-plan"><summary>마스코트 34종 동작 제작 현황 <span id="cw-animation-progress"></span></summary>
+<details class="cw-more-gestures"><summary>일상 제스처 더 보기 <span>16가지</span></summary><div id="cw-extra-actions" class="cw-action-grid"></div></details><details class="cw-animation-plan"><summary>마스코트 34종 동작 제작 현황 <span id="cw-animation-progress"></span></summary>
 <p>실제 원화가 없는 동작은 완성된 것처럼 표시하지 않아요. 머리카락·관절이 늘어나지 않도록 신규 포즈를 별도로 제작할 예정이에요.</p>
 <div id="cw-motion-plan" class="cw-motion-plan"></div></details>
 </div>
@@ -71,9 +71,9 @@
 </span><span class="mate-orb-ring" aria-hidden="true"></span><span class="mate-orb-light" aria-hidden="true"></span>
 </button>
 <div id="cw-visitor" class="cw-visitor" hidden aria-label="소환한 내 캐릭터">
-<div class="cw-portal" aria-hidden="true"></div>
+<div class="cw-portal" aria-hidden="true"></div><div class="cw-visitor-halo" aria-hidden="true"></div>
 <button type="button" id="cw-avatar-button" aria-label="캐릭터 표정 바꾸기"><img id="cw-avatar" alt="소환한 메이플 캐릭터" width="240" height="240"></button>
-<span id="cw-visitor-label"></span>
+<span id="cw-visitor-label"></span><span id="cw-visitor-class" class="cw-visitor-class"></span>
 </div>
 </div>
 <div class="cw-stage-footer"><span id="cw-stage-info">캐릭터를 소환하면 함께 놀 수 있어요.</span><button type="button" id="cw-motion" aria-pressed="false">움직임 끄기</button></div>
@@ -81,13 +81,13 @@
 </div>
 <section id="cw-profile" class="cw-profile" hidden aria-labelledby="cw-profile-title">
 <div class="cw-profile-copy"><p class="eyebrow">HOLOGRAPHIC CHARACTER CARD</p><h2 id="cw-profile-title">내 캐릭터의 빛나는 기록</h2><p>카드를 기울이고 캐릭터 표정을 바꿔 보세요. API에서 확인된 값만 표시합니다.</p>
-<div class="cw-profile-actions"><button type="button" id="cw-capture" class="button primary">프로필 카드 PNG 저장</button><button type="button" id="cw-pose" class="button">포즈 바꾸기</button></div><p id="cw-save-status" class="cw-small" role="status"></p>
+<div class="cw-profile-actions"><button type="button" id="cw-capture" class="button primary">프로필 카드 PNG 저장</button><button type="button" id="cw-pose" class="button">자세 바꾸기</button><button type="button" id="cw-emotion" class="button">표정 바꾸기</button></div><p id="cw-pose-state" class="cw-small" role="status">캐릭터를 소환하면 동작과 표정을 바꿀 수 있어요.</p><p id="cw-save-status" class="cw-small" role="status"></p>
 </div>
 <div id="cw-card" class="cw-card" tabindex="0" role="img" aria-label="메이플스토리 캐릭터의 홀로그램 프로필 카드">
-<div class="cw-card-glow"></div><div class="cw-card-top"><b>MAPLETOOLS</b><span>CHARACTER ID · OFFICIAL DATA</span></div>
-<div class="cw-card-main"><img id="cw-card-image" alt="" width="240" height="240"><div><span id="cw-card-world">WORLD</span><h3 id="cw-card-name"></h3><p id="cw-card-job"></p></div></div>
+<div class="cw-card-glow"></div><div class="cw-card-rings" aria-hidden="true"></div><div class="cw-card-top"><b>MAPLETOOLS</b><span>CHARACTER ID · OFFICIAL DATA</span></div>
+<div class="cw-card-main"><div class="cw-card-art"><img id="cw-card-image" alt="" width="240" height="240"></div><div class="cw-card-character"><span id="cw-card-world">WORLD</span><h3 id="cw-card-name"></h3><p id="cw-card-job"></p></div></div>
 <div class="cw-card-stats"><div><small>LEVEL</small><strong id="cw-card-level">—</strong></div><div><small>COMBAT POWER</small><strong id="cw-card-combat">—</strong></div><div><small>UNION</small><strong id="cw-card-union">—</strong></div></div>
-<div class="cw-card-bottom"><span>Data based on NEXON Open API</span><span>✦ ✧ ✦</span></div>
+<div class="cw-card-bottom"><span>Data based on NEXON Open API</span><span>✦ PREMIUM CHARACTER ✦</span></div>
 </div>
 </section>
 <section class="cw-notice"><h2>이 기능에 대해</h2><p>입력한 API 키를 브라우저 메모리에서만 사용합니다. 캐릭터 정보는 조회 시점과 API 갱신에 따라 달라질 수 있습니다. 마스코트의 안전한 추가 동작과 자동 생활 반응을 제공합니다. 34종은 최종 목표이며, 현재 기존 원화로 재생 가능한 동작과 새 전신 원화가 필요한 동작을 분리하여 표시합니다.</p><p>현재 본인 계정 전체를 자동으로 공개하는 기능은 제공하지 않습니다. &middot; Data based on NEXON Open API</p></section>
