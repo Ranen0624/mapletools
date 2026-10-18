@@ -75,3 +75,10 @@
 @media(max-width:850px){.cw-layout,.cw-profile{grid-template-columns:1fr}.cw-control{order:2}.cw-playground{order:1;min-height:475px}.cw-mate{width:min(42%,220px)}.cw-actors{inset:115px 8px 55px}.cw-profile{padding:21px}.cw-intro{margin-top:10px}}
 @media(max-width:520px){.cw-page{padding-top:72px}.cw-playground{min-height:410px}.cw-bubble{top:50px;left:10px;font-size:11px}.cw-actors{inset:105px 2px 52px}.cw-mate{width:49%}.cw-visitor{width:48%}.cw-visitor #cw-avatar-button{min-height:150px}.cw-card-top{padding:17px 15px 0}.cw-card-main{padding:10px 11px}.cw-card-stats{margin:0 12px}.cw-card-bottom{padding:14px 12px}.cw-stage-footer{padding:10px}.cw-stage-footer span{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.cw-visitor,.cw-visitor img,.cw-portal{animation:none!important}.cw-card{transition:none}}
+
+/* Stage reactions are whole-sprite transforms only: hair and joints never warp. */
+.cw-visitor[data-motion="hop"].cw-tap img{animation:cw-sprite-hop .9s cubic-bezier(.3,0,.25,1) 1}
+.cw-visitor[data-motion="dance"].cw-tap img{animation:cw-sprite-dance 1.2s ease-in-out 1}
+.cw-visitor[data-motion="celebrate"].cw-tap img{animation:cw-sprite-hop .9s ease 1}
+@keyframes cw-sprite-hop{0%,100%{transform:translateY(0)}43%{transform:translateY(-38px)}}
+@keyframes cw-sprite-dance{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-12px) rotate(-6deg)}75%{transform:translateY(-12px) rotate(6deg)}}
