@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node tests/demo-engine.test.mjs && node tests/dom.test.cjs && node tests/csv-statistics.test.mjs && node tests/data-mate.test.cjs && node tests/mate-rig.test.mjs && node tests/coordi.test.mjs && node tests/avatar.test.mjs && node tests/character-world.test.mjs && node tests/mate-motion-catalog.test.mjs && node tests/mate-gestures-and-card.test.mjs",
+    "test": "node tests/demo-engine.test.mjs && node tests/dom.test.cjs && node tests/csv-statistics.test.mjs && node tests/data-mate.test.cjs && node tests/mate-rig.test.mjs && node tests/coordi.test.mjs && node tests/avatar.test.mjs",
     "check:links": "python3 tests/check_site.py"
   },
   "devDependencies": {

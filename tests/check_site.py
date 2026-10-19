@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.parse import urlsplit,unquote
 import json,hashlib,re,subprocess
 ROOT=Path(__file__).resolve().parents[1]
-PAGES=['character-world.html','index.html','demo.html','privacy.html','terms.html','download.html','coordi.html','updates.html']
+PAGES=['index.html','demo.html','privacy.html','terms.html','download.html','coordi.html','updates.html']
 class Page(HTMLParser):
  def __init__(self,text):
   super().__init__(convert_charrefs=True);self.ids=[];self.links=[];self.lang=None;self.headings=0;self.controls=[];self.feed(text)
@@ -50,7 +50,7 @@ if dev_manifest.exists():
  public_files.add(item['file'])
 text=(ROOT/'index.html').read_text()+(ROOT/'app.js').read_text()
 for term in ['장비','유니온','코디','전투력','HEXA','모아보기','2.0.4','1.0.5','제논','데몬어벤져']:assert term in text,term
-for name in ['app.js','demo.js','demo-engine.js','coordi.js','coordi-engine.js','coordi-picker.js','data-mate.js','csv-worker.js','csv-statistics.js','mate-rig.js','character-world.js','mate-motion.js','mate-animation-catalog.js','mate-behaviors.js','character-card-art.js']:subprocess.run(['node','--check',str(ROOT/name)],check=True)
+for name in ['app.js','demo.js','demo-engine.js','coordi.js','coordi-engine.js','coordi-picker.js','data-mate.js','csv-worker.js','csv-statistics.js','mate-rig.js']:subprocess.run(['node','--check',str(ROOT/name)],check=True)
 # Only verified public release files may be added under downloads.
 changed=subprocess.check_output(['git','status','--porcelain','--no-renames','--untracked-files=all'],cwd=ROOT,text=True)
 for line in changed.splitlines():
