@@ -1,7 +1,6 @@
 import {WIDTH,HEIGHT,POSES,CROPS,HEAD_PLACEMENT,HEAD_EYES,NECKS,HAND_PATH,ARM_PATH,WRIST,ELBOW,framePoint} from './mate-parts.js';
 import {blinkAt,drawEffects} from './mate-effects.js';
-import {greetingAt,GREETING_DURATION,reactionAt,gestureAt} from './mate-motion.js';
-import {mascotPoseFor,mascotMoodFor,DEFAULT_AMBIENT_BEHAVIORS} from './mate-behaviors.js';
+import {greetingAt,GREETING_DURATION} from './mate-motion.js';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const rad=degrees=>degrees*Math.PI/180;
 export function poseAt(time,x=0,y=0,reaction=0){
@@ -41,8 +40,8 @@ export function createMatePainter(open,closed,atlas,layers={}){
  }
  const hand=atlas?skin(HAND_PATH):null,arm=atlas?skin(ARM_PATH):null,wrist=framePoint(2,...WRIST),elbow=framePoint(2,...ELBOW);
  return (ctx,p,state=0,still=false)=>{
-  const age=p.actionAge??((p.time||0)%8),greeting=state===2&&!still&&p.actionKind==='greet'?greetingAt(age):greetingAt(-1);
-  ctx.save();ctx.translate(256+(still?0:(p.shiftX||0)),510+(still?0:(p.bodyY||0)+greeting.lift));ctx.rotate(still?0:(p.body||0)+greeting.body);ctx.translate(-256,-510);
+  const age=p.actionAge??((p.time||0)%8),greeting=state===2&&!still?greetingAt(age):greetingAt(-1);
+  ctx.save();ctx.translate(256,510+(still?0:(p.bodyY||0)+greeting.lift));ctx.rotate(still?0:(p.body||0)+greeting.body);ctx.translate(-256,-510);
   if(!bodyAtlas||!headAtlas){ctx.drawImage(full[state],0,0);ctx.restore();return;}
   ctx.drawImage(bodies[state],0,0);
   const [cx,cy,sw,sh]=CROPS[state],neck=[24+NECKS[state][0]*464/sw,24+NECKS[state][1]*550/sh];
@@ -54,7 +53,7 @@ export function createMatePainter(open,closed,atlas,layers={}){
   if(state===1){ctx.save();ctx.beginPath();ctx.moveTo(273,319);ctx.lineTo(292,267);ctx.lineTo(313,256);ctx.lineTo(319,272);ctx.lineTo(304,318);ctx.closePath();ctx.clip();ctx.drawImage(bodies[state],0,0);ctx.restore();}
   if(state===3){ctx.save();ctx.beginPath();ctx.rect(231,310,160,100);ctx.clip();ctx.drawImage(bodies[state],0,0);ctx.restore();}
   if(state===2&&hand){
-   const elbowAngle=p.actionKind==='greet'?greeting.elbow:(p.gesture?.elbow||0),wristAngle=p.actionKind==='greet'?greeting.wrist:(p.gesture?.wrist||0);
+   const elbowAngle=greeting.elbow,wristAngle=greeting.wrist;
    drawJoint(ctx,elbow,elbowAngle,()=>{ctx.drawImage(arm,0,0);drawJoint(ctx,wrist,wristAngle,()=>ctx.drawImage(hand,0,0));});
   }
   if(!still)drawEffects(ctx,t,state,p.reaction||0);ctx.restore();
@@ -65,13 +64,12 @@ export async function mountMateRig(figure,section){
  const canvas=figure.querySelector('.mate-canvas');if(!canvas)return null;
  let ctx;try{ctx=canvas.getContext('2d',{alpha:true});}catch{return null;}if(!ctx)return null;
  let disposed=false,active=false,frame=0,lastFrame=0,time=0,actionTime=-100,lastInteraction=0,kind='greet',hovered=false;
- let nextAmbient=15,ambientIndex=0;const ambientOrder=DEFAULT_AMBIENT_BEHAVIORS;
  let x=0,y=0,targetX=0,targetY=0,drag=null,offsetX=0,offsetY=0,suppressClickUntil=0;
  const cleanups=[],on=(target,name,fn,options)=>{target.addEventListener(name,fn,options);cleanups.push(()=>target.removeEventListener(name,fn,options));};
  const cancel=()=>{cancelAnimationFrame(frame);frame=0;lastFrame=0;};
  const releaseDrag=()=>{if(drag&&figure.hasPointerCapture?.(drag.id))figure.releasePointerCapture(drag.id);drag=null;figure.classList.remove('is-dragging');};
  const resetPosition=()=>{releaseDrag();offsetX=offsetY=0;if(figure.style)figure.style.translate='';};
- const dispose=()=>{if(disposed)return;disposed=true;cancel();resetPosition();cleanups.splice(0).forEach(fn=>fn());figure.classList.remove('has-rig');delete figure.dataset.renderer;delete figure.dataset.pose;delete figure.dataset.mood;};
+ const dispose=()=>{if(disposed)return;disposed=true;cancel();resetPosition();cleanups.splice(0).forEach(fn=>fn());figure.classList.remove('has-rig');delete figure.dataset.renderer;delete figure.dataset.pose;};
  try{
   const original=figure.querySelector('.mate-body img:not(.mate-blink)');
   const asset=name=>loadImage(new URL('./assets/'+name,import.meta.url).href);
@@ -82,21 +80,14 @@ export async function mountMateRig(figure,section){
   function paint(still=false){
    size();ctx.setTransform(canvas.width/WIDTH,0,0,canvas.height/HEIGHT,0,0);ctx.clearRect(0,0,WIDTH,HEIGHT);
    const elapsed=time-actionTime,reaction=elapsed>=0&&elapsed<GREETING_DURATION?Math.sin(elapsed/GREETING_DURATION*Math.PI)**2:0;
-   const requested=elapsed>=0&&elapsed<GREETING_DURATION?mascotPoseFor(kind):null;
-   const state=still?POSES.idle:requested&&Object.hasOwn(POSES,requested)?POSES[requested]:sceneAt(time,lastInteraction,hovered,reaction);
+   const state=still?POSES.idle:sceneAt(time,lastInteraction,hovered,reaction);
    figure.dataset.pose=Object.keys(POSES)[state];
-   figure.dataset.mood=requested?mascotMoodFor(kind):'gentle';
-   const motion=still?reactionAt('none',-1):reactionAt(kind,elapsed);
-   const base=poseAt(time,x,y,reaction);
-   draw(ctx,still?{}:{...base,shiftX:motion.shiftX,bodyY:base.bodyY+motion.lift,body:base.body+motion.body,head:base.head+motion.head,actionAge:elapsed,actionKind:kind,gesture:gestureAt(kind,elapsed)},state,still);
+   draw(ctx,still?{}:{...poseAt(time,x,y,reaction),actionAge:elapsed},state,still);
   }
   function tick(now){
    frame=0;if(!active||disposed)return;
    if(!lastFrame||now-lastFrame>=1000/30){
     const dt=lastFrame?Math.min((now-lastFrame)/1000,.05):1/30;lastFrame=now;time+=dt;
-    if(time>=nextAmbient&&!hovered&&!drag&&time-lastInteraction>8&&time-actionTime>GREETING_DURATION){
-     kind=ambientOrder[ambientIndex++%ambientOrder.length];actionTime=time;nextAmbient=time+13+ambientIndex%5*2;
-    }
     const easing=1-Math.exp(-dt*7);x+=(targetX-x)*easing;y+=(targetY-y)*easing;
     paint();
    }
@@ -121,7 +112,7 @@ export async function mountMateRig(figure,section){
   on(figure,'pointercancel',()=>{releaseDrag();reset();});on(figure,'lostpointercapture',()=>{releaseDrag();reset();});
   on(figure,'click',event=>{if(event.timeStamp<suppressClickUntil){event.preventDefault();event.stopImmediatePropagation();}},true);
   on(figure,'keydown',event=>{if(event.key==='Escape')resetPosition();});
-  on(figure,'mate-react',event=>{if(!active)return;kind=event.detail?.kind||'greet';actionTime=time;lastInteraction=time;nextAmbient=time+17;});
+  on(figure,'mate-react',event=>{if(!active)return;kind=event.detail?.kind||'greet';actionTime=time;lastInteraction=time;});
   const observer=new MutationObserver(sync);observer.observe(section,{attributes:true,attributeFilter:['data-awake']});observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});cleanups.push(()=>observer.disconnect());
   on(document,'visibilitychange',sync);on(window,'resize',()=>{resetPosition();if(!active)paint(true);},{passive:true});
   if(preference.addEventListener)on(preference,'change',sync);
