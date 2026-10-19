@@ -1,0 +1,4 @@
+{
+  "apiBase": "",
+  "help": "Cloudflare Worker 배포 후 apiBase를 해당 주소로 설정합니다. 비워두면 공개 JSON 스냅샷을 사용합니다."
+}
