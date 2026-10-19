@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c1020">
+<title>미스터리 파일 · 레벨별 최강자 TOP 3 | 메이플툴즈</title>
+<meta name="description" content="메이플툴즈 미스터리 파일. 실제 수집된 캐릭터 가운데 레벨·직업·월드 조건에 맞는 전투력 TOP 3를 금·은·동 시상대에서 확인하세요.">
+<link rel="canonical" href="https://mapletools.kr/mystery.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="미스터리 파일 | 메이플툴즈 최강자 시상식">
+<meta property="og:description" content="레벨·직업·월드별 전투력 TOP 3. 실제 캐릭터 외형과 함께 확인하세요.">
+<meta property="og:url" content="https://mapletools.kr/mystery.html">
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="mystery.css?v=1">
+<script type="module" src="mystery.js?v=1"></script>
+</head>
+<body>
+<a class="skip" href="#filters">검색 조건으로 바로가기</a>
+<header class="sitebar">
+  <a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">✦</span>Maple<span>Tools</span></a>
+  <nav aria-label="빠른 이동"><a href="index.html">홈페이지</a><a href="demo.html">검색기 체험</a><a href="coordi.html">코디 검색기</a></nav>
+  <span class="top-tag">MYSTERY FILE / 01</span>
+</header>
+<main>
+<section class="masthead">
+  <div class="masthead-inner">
+    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MAPLETOOLS ORIGINAL · THE CHAMPIONS</p>
+    <h1>미스터리 <span>파일</span><small>레벨별 최강자 시상식</small></h1>
+    <p class="lead">280~300레벨 · 직업 · 월드를 선택하세요.<br>수집된 실제 캐릭터 중 가장 높은 전투력을 기록한 세 명이 시상대에 오릅니다.</p>
+    <div class="masthead-pills"><span>실제 캐릭터 데이터</span><span>금 · 은 · 동 TOP 3</span><span>조건별 순위</span></div>
+  </div>
+</section>
+<div class="wrap">
+<section class="filter-card" id="filters" aria-labelledby="filter-title">
+  <div class="filter-head"><div><span class="kicker">01 / SEARCH PARAMETERS</span><h2 id="filter-title">최강자 검색 조건</h2></div><p>각 레벨을 단독으로 지정하거나 범위로 검색할 수 있어요.</p></div>
+  <form id="mystery-form">
+    <div class="filter-grid">
+      <div class="field"><label for="min-level">최소 레벨</label><select id="min-level" name="min" required></select></div>
+      <div class="field"><label for="max-level">최대 레벨</label><select id="max-level" name="max" required></select></div>
+      <div class="field"><label for="job">직업 <small>(비우면 전체)</small></label><input id="job" name="job" type="search" list="mystery-job-list" placeholder="전체 직업" autocomplete="off" maxlength="50"><datalist id="mystery-job-list"></datalist></div>
+      <div class="field"><label for="world">월드</label><select id="world" name="world"><option value="">전체 월드</option><option>스카니아</option><option>베라</option><option>루나</option><option>제니스</option><option>크로아</option><option>유니온</option><option>엘리시움</option><option>이노시스</option><option>레드</option><option>오로라</option><option>아케인</option><option>노바</option><option>에오스</option><option>헬리오스</option></select></div>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn primary" id="search-btn">최강자 찾기 <span aria-hidden="true">↗</span></button>
+      <button type="button" class="btn subtle" id="share-btn">조건 링크 복사 <span aria-hidden="true">↗</span></button>
+      <label class="btn upload" for="csv-input">기존 결과 CSV 분석 <span aria-hidden="true">↑</span><input id="csv-input" type="file" accept=".csv,text/csv" hidden></label>
+      <span class="action-note">CSV 분석은 브라우저 안에서만 처리됩니다.</span>
+    </div>
+  </form>
+</section>
+<section class="result-section" aria-labelledby="results-title">
+  <div class="result-title">
+    <div><span class="kicker">02 / THE CEREMONY</span><h2 id="results-title">최강자 <em>TOP 3</em></h2><p id="result-subtitle">조건을 선택하고 검색하세요.</p></div>
+    <div id="data-status" class="data-status" role="status" aria-live="polite">공개 데이터 확인 중</div>
+  </div>
+  <div class="ceremony-board" aria-label="전투력 상위 3인 시상대">
+    <div class="ceremony-spot silver" id="podium-2" data-rank="2"></div>
+    <div class="ceremony-spot gold" id="podium-1" data-rank="1"></div>
+    <div class="ceremony-spot bronze" id="podium-3" data-rank="3"></div>
+  </div>
+  <p id="coverage-note" class="coverage-note" role="status">검증된 데이터만 순위에 반영합니다.</p>
+  <div class="lower-ranks">
+    <div class="lower-head"><div><span class="kicker">03 / CONTENDERS</span><h2>이어서 보는 순위</h2></div><span class="mini-label">4~10위</span></div>
+    <div class="table-scroll"><table><thead><tr><th>순위</th><th>캐릭터</th><th>월드</th><th>직업</th><th>레벨</th><th>전투력</th></tr></thead><tbody id="rank-rows"><tr><td colspan="6" class="empty-table">검색 조건에 맞는 데이터가 아직 없습니다.</td></tr></tbody></table></div>
+  </div>
+</section>
+<section class="notice" aria-labelledby="notice-title">
+  <div class="notice-icon" aria-hidden="true">ⓘ</div>
+  <div><h2 id="notice-title">순위 집계 기준</h2>
+    <p>이 결과는 NEXON Open API를 통해 <strong>실제로 수집·저장한 캐릭터만</strong> 대상으로 합니다. 수집이 완료되지 않은 부문은 전체 서버 확정 1위가 아니며, 최종 전투력은 같은 기준일의 공개 수치를 비교해야 합니다.</p>
+    <p>공용 서버 연결 전에는 검색 결과 CSV를 직접 불러와 확인할 수 있습니다. 시상대 캐릭터 이미지는 공식 API가 제공한 외형 URL이 있을 때만 표시합니다. 가상 캐릭터나 임의의 전투력은 생성하지 않습니다.</p>
+    <p class="copyright">Game resources © NEXON · NEXON Open API based · MapleTools</p>
+  </div>
+</section>
+</div>
+</main>
+<footer class="footer"><div><strong>MAPLETOOLS</strong><span>미스터리 파일 · 실제 데이터가 만드는 시상식</span></div><a href="index.html">메이플툴즈 홈으로 →</a></footer>
+</body>
+</html>
