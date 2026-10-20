@@ -53,4 +53,4 @@ GitHub Pages는 `main` 브랜치의 루트 디렉터리를 배포합니다. `CNA
 
 ## 미스터리 파일 최초 공개판
 
-`mystery.html`에서 실제 PC 검색 결과 수집본의 레벨·직업·월드별 전투력 시상식을 제공합니다. 초기 공개 데이터는 미수집 상태입니다. [데이터 반영·검증·Cloudflare 확장 안내](docs/mystery-operations.md)를 따르세요.
+`mystery.html`에서 캐릭터 API 검증본의 285~300레벨·직업·월드별 전투력 시상식을 제공합니다. 일반 월드와 에오스·핼리오스는 분리합니다. 초기 384명 시험 표본은 공개하지 않으며, 전체 후보의 API 검증이 끝나기 전에는 미수집으로 표시합니다. [데이터 반영·검증·Cloudflare 확장 안내](docs/mystery-operations.md)를 따르세요.

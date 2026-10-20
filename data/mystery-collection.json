@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "data_date": "2026-10-19",
+  "publication_status": "awaiting_full_api_verification",
+  "value_basis": {
+    "name_world_job_level_image": "character/basic",
+    "combat": "character/stat final_stat[stat_name=전투력]"
+  },
+  "ranking_basis": "API combat_power descending; API basic level/job/world only",
+  "candidate_discovery": "ranking/overall API for names only; includes level 284 as a date-boundary buffer",
+  "candidates": 741867,
+  "candidate_groups": {
+    "regular": 694499,
+    "eos-helios": 47368
+  },
+  "per_level_candidate_cap": null,
+  "display_level_min": 285,
+  "display_level_max": 300,
+  "published_characters": 0,
+  "discovery_coverage": [
+    {
+      "world_type": 0,
+      "world_name": "",
+      "last_page": 3473,
+      "last_level": 283,
+      "max_pages": 5000,
+      "initial_limit": 100,
+      "auto_expanded": true,
+      "limited": false
+    },
+    {
+      "world_type": 1,
+      "world_name": "",
+      "last_page": 237,
+      "last_level": 283,
+      "max_pages": 400,
+      "initial_limit": 100,
+      "auto_expanded": true,
+      "limited": false
+    }
+  ],
+  "notes": [
+    "Candidate count is not the number of API-verified level 285-300 characters.",
+    "The initial 384-name sample was a local test and is not published.",
+    "This file records the discovery audit, not a live progress counter."
+  ]
+}
