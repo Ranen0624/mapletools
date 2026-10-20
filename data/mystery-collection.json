@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "data_date": "2026-10-19",
-  "publication_status": "awaiting_full_api_verification",
+  "publication_status": "interim",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
     "combat": "character/stat final_stat[stat_name=전투력]"
@@ -16,7 +16,23 @@
   "per_level_candidate_cap": null,
   "display_level_min": 285,
   "display_level_max": 300,
-  "published_characters": 0,
+  "published_characters": 136377,
+  "api_verified_groups": {
+    "regular": 113097,
+    "eos-helios": 23280
+  },
+  "collection": {
+    "state": "collecting",
+    "candidates": 741867,
+    "processed": 136469,
+    "pending": 605398,
+    "failed": 0,
+    "outside": 0,
+    "unavailable": 92,
+    "verified": 136377,
+    "duplicate_verified_rows": 0,
+    "as_of": "2026-10-20T06:00:29.242816+00:00"
+  },
   "discovery_coverage": [
     {
       "world_type": 0,
@@ -40,8 +56,8 @@
     }
   ],
   "notes": [
-    "Candidate count is not the number of API-verified level 285-300 characters.",
-    "The initial 384-name sample was a local test and is not published.",
-    "This file records the discovery audit, not a live progress counter."
+    "Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.",
+    "Candidate count includes the level 284 date-boundary buffer and is not the final eligible population.",
+    "Counts are a publication snapshot, not a live progress counter."
   ]
 }

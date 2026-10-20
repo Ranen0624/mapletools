@@ -19,7 +19,7 @@ if(config.staticIndex) {
     const data=await loadRankingSource({base:new URL('https://mystery.test/'),fetcher,options:q});
     const file=await readFile(new URL(q.file,root),'utf8');
     assert.ok(q.file.endsWith(createHash('sha256').update(file).digest('hex')+'.json'));
-    const {availableJobs,availableWorlds,selectionCounts,downloadJSON,downloadCSV,...canonical}=data;
+    const {availableJobs,availableWorlds,selectionCounts,downloadJSON,downloadCSV,collection,...canonical}=data;
     assert.deepEqual(JSON.parse(file),canonical,'검색 파일에 허용되지 않은 필드가 있습니다.');
     assert.equal(await readFile(new URL(q.file.replace(/\.json$/,'.csv'),root),'utf8'),snapshotCSV(canonical));
   }
