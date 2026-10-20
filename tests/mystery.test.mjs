@@ -4,19 +4,19 @@ import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
-import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES} from '../mystery-core.js';
+import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 import {importFile} from '../scripts/import-mystery.mjs';
-const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:280+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
+const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:285+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
 test('empty feed never invents a winner',()=>{ const s=validateSnapshot(emptySnapshot()); assert.equal(filterRank(s.characters).length,0); assert.match(collectionStatus(s,{},0),/미수집/); });
 test('inclusive level boundaries, jobs/worlds, deterministic ties and top ten',()=>{
-  const rows=Array.from({length:21},(_,i)=>row(i));
+  const rows=Array.from({length:16},(_,i)=>row(i));
   assert.equal(filterRank(rows)[0].level,300);
-  assert.equal(filterRank(rows,{min:280,max:280}).length,1);
+  assert.equal(filterRank(rows,{min:285,max:285}).length,1);
   assert.equal(filterRank(rows,{job:'비숍'}).length,0);
   assert.equal(filterRank(rows,{world:'크로아'}).length,0);
   assert.equal(filterRank(rows).slice(3,10).length,7);
-  for(const options of [{min:279},{max:301},{min:290,max:280},{min:280.5}]) assert.throws(()=>filterRank(rows,options));
+  for(const options of [{min:284},{max:301},{min:290,max:285},{min:285.5}]) assert.throws(()=>filterRank(rows,options));
   const tied=[row(0,{name:'나',combat:100}),row(1,{name:'가',combat:100})];
   assert.equal(filterRank(tied)[0].name,'가');
 });
@@ -34,7 +34,7 @@ test('same-day conflicts and mixed dates fail closed; duplicates do not inflate 
   assert.throws(()=>prepareSnapshot([row()],{date:'2026-10-18'}),/기준일/);
 });
 test('CSV BOM, quotes, comma in job and exact power; no missing date guessing',()=>{
-  const csv='\uFEFF닉네임,월드,직업,레벨,전투력\r\n검증전용,루나,"아크메이지(불,독)",280,"123,456"\r\n';
+  const csv='\uFEFF닉네임,월드,직업,레벨,전투력\r\n검증전용,루나,"아크메이지(불,독)",285,"123,456"\r\n';
   assert.throws(()=>parseImport(csv),/기준일/);
   const s=parseImport(csv,{date:'2026-10-19'}); assert.equal(s.characters[0].combat,123456); assert.equal(s.characters[0].job,'아크메이지(불,독)');
   assert.throws(()=>parseImport(csv+'broken,line\n',{date:'2026-10-19'}),/열 개수/);
@@ -53,11 +53,22 @@ test('scope and exhaustive claims are explicit and bounded to selected scope',()
   assert.throws(()=>prepareSnapshot([row()],{coverage:{status:'complete'}}),/전체 대상 수/);
   assert.throws(()=>prepareSnapshot([row()],{coverage:{worlds:['크로아']}}),/범위 밖/);
   const s=prepareSnapshot([row()],{coverage:{status:'complete',jobs:['아델'],worlds:['루나'],expected_count:1}});
-  assert.match(collectionStatus(s,{min:280,max:300,job:'아델',world:'루나'},1),/수집 완료/);
-  assert.match(collectionStatus(s,{min:280,max:300,job:'',world:''},1),/일부 수집/);
+  assert.match(collectionStatus(s,{min:285,max:300,job:'아델',world:'루나'},1),/수집 완료/);
+  assert.match(collectionStatus(s,{min:285,max:300,job:'',world:''},1),/일부 수집/);
   assert.equal(validateSnapshot(s).characters.length,1);
 });
 test('CSV export prevents formula execution',()=>{ const s=prepareSnapshot([row(0,{name:'=CHECK_ONLY'})]); assert(snapshotCSV(s).includes("'=CHECK_ONLY")); });
+test('regular, Eos/Helios and unknown event worlds never share a podium',()=>{
+  const rows=[row(0),row(1,{world:'에오스',combat:999}),row(2,{world:'핼리오스',combat:998}),row(3,{world:'챌린저스',combat:997})];
+  assert.deepEqual(filterRank(rows).map(r=>r.world),['루나']);
+  assert.deepEqual(filterRank(rows,{group:'eos-helios'}).map(r=>r.world),['에오스','핼리오스']);
+  assert.deepEqual(filterRank(rows,{group:'other'}).map(r=>r.world),['챌린저스']);
+  assert.equal(filterRank(rows,{world:'에오스'}).length,1);
+  assert.equal(worldGroup('헬리오스'),'eos-helios');
+  assert.throws(()=>filterRank(rows,{group:'regular',world:'에오스'}),/일치하지/);
+  assert.throws(()=>filterRank(rows,{group:'all'}),/분류/);
+  assert.throws(()=>prepareSnapshot([row(0,{level:284})]));
+});
 test('static and Worker sources share validation and never silently fall back on failure',async()=>{
   let urls=[]; const fetcher=async url=>{ urls.push(String(url)); return new Response(JSON.stringify(urls.length===1?{apiBase:''}:emptySnapshot())); };
   await loadRankingSource({fetcher,base:new URL('https://example.test/project/')}); assert.equal(urls[1],'https://example.test/project/data/mystery-rankings.json');

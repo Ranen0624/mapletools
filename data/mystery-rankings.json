@@ -1,17 +1,18 @@
 {
   "schema_version": 1,
   "updated_at": null,
-  "source": "PC 검색 결과 · NEXON Open API",
+  "source": "NEXON 캐릭터 기본정보·종합능력치 API",
   "coverage": {
     "status": "uncollected",
     "data_date": null,
-    "level_min": 280,
+    "level_min": 285,
     "level_max": 300,
     "jobs": [],
     "worlds": [],
-    "description": "최초 수집 파일 등록 전입니다.",
+    "description": "초기 표본은 공개하지 않습니다. 전체 후보의 같은 기준일 캐릭터 API 검증본을 준비 중입니다.",
     "limitations": [
-      "전체 캐릭터를 수집한 공식 랭킹이 아닙니다."
+      "현재 공개된 검증본이 없어 시상대는 미수집 상태입니다.",
+      "공개 전 레벨·직업·월드·전투력을 캐릭터 API 응답으로 검증합니다."
     ]
   },
   "characters": []
