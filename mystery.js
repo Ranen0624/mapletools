@@ -1,5 +1,5 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,emptySnapshot,filterRank,parseImport,collectionStatus} from './mystery-core.js?v=4';
-import {loadRankingSource} from './mystery-source.js?v=4';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,emptySnapshot,filterRank,parseImport,collectionStatus} from './mystery-core.js?v=6';
+import {loadRankingSource} from './mystery-source.js?v=6';
 const $ = id => document.getElementById(id);
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
 const jobs=['아델','히어로','팔라딘','다크나이트','소울마스터','미하일','아란','블래스터','데몬슬레이어','데몬어벤져','카이저','제로','렌','비숍','아크메이지(불,독)','아크메이지(썬,콜)','플레임위자드','에반','루미너스','배틀메이지','키네시스','일리움','라라','보우마스터','신궁','패스파인더','윈드브레이커','메르세데스','와일드헌터','카인','나이트로드','섀도어','듀얼블레이더','나이트워커','팬텀','카데나','호영','칼리','바이퍼','캡틴','캐논마스터','스트라이커','은월','메카닉','엔젤릭버스터','아크','제논'];
@@ -36,13 +36,14 @@ function render() {
   const count=snapshot.selectionCounts?Object.entries(snapshot.selectionCounts).filter(([lv])=>Number(lv)>=Number(o.min)&&Number(lv)<=Number(o.max)).reduce((sum,[,n])=>sum+n,0):ranked.length;
   for(let i=1;i<=3;i++) podium(i,ranked[i-1]);
   $('result-subtitle').textContent=`${o.min===o.max?o.min:o.min+'~'+o.max}레벨 · ${o.job||'전체 직업'} · ${WORLD_GROUPS[o.group].label} / ${o.world||'분류 전체'} · 확인된 ${count.toLocaleString('ko-KR')}명`;
-  $('data-status').textContent=busy?'공개 데이터 확인 중':failure||`${local?'내 파일 · ':''}${collectionStatus(snapshot,o,ranked.length)}`;
+  $('data-status').textContent=busy?'공개 데이터 확인 중':failure||`${local?'내 파일 · ':''}${snapshot.collection?.state==='collecting'?(ranked.length?'수집 진행 중 · 중간 수집본 내 순위':'수집 진행 중 · 선택 조건 미수집'):collectionStatus(snapshot,o,ranked.length)}`;
   $('data-status').dataset.state=failure?'error':ranked.length?'partial':'empty';
   const c=snapshot.coverage,span=values=>values.includes('*')?'전체':values.join(', ')||'미수집';
   $('snapshot-date').textContent=c.data_date||'미수집';
   $('snapshot-updated').textContent=snapshot.updated_at?new Date(snapshot.updated_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false})+' (한국시간)':local?'내 파일 미리보기':'등록 전';
   $('snapshot-scope').textContent=`${c.level_min}~${c.level_max}레벨 / ${span(c.jobs)} / ${span(c.worlds)}`;
   $('snapshot-source').textContent=snapshot.source;
+  $('snapshot-progress').textContent=snapshot.collection?`${snapshot.collection.state==='collecting'?'중간 수집본':'후보 조회 완료'} · API 대상 ${snapshot.collection.verified.toLocaleString('ko-KR')}명 / 전체 후보 ${snapshot.collection.candidates.toLocaleString('ko-KR')}명 · 미조회 ${snapshot.collection.pending.toLocaleString('ko-KR')}명`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.characters.length?'공개 수집본':'등록 전';
   $('json-download').href=snapshot.downloadJSON||'data/mystery-rankings.json';
   $('csv-download').href=snapshot.downloadCSV||'data/mystery-rankings.csv';
   $('coverage-note').textContent=failure?'데이터를 불러오지 못해 순위를 표시하지 않습니다. 공개 데이터로 돌아가기를 눌러 재시도해 주세요.':

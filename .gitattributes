@@ -1,2 +1,4 @@
 # Keep the public CSV's BOM and CRLF bytes identical to snapshotCSV on every OS.
 data/mystery-*.csv -text
+data/mystery-cache/*.csv -text
+data/mystery-cache/*.json text eol=lf
