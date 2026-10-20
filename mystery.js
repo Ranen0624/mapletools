@@ -1,5 +1,5 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,emptySnapshot,filterRank,parseImport,collectionStatus,snapshotCSV,validDate} from './mystery-core.js?v=7';
-import {loadRankingSource} from './mystery-source.js?v=7';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseImport,collectionStatus,snapshotCSV,validDate} from './mystery-core.js?v=8';
+import {loadRankingSource} from './mystery-source.js?v=8';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -13,7 +13,7 @@ function addDataOptions() {
   if(selected&&!dates.includes(selected)) $('data-date').add(new Option(selected+' · 미수집',selected));
   $('data-date').value=selected;
 
-  $('mystery-job-list').replaceChildren(...[...new Set([...jobs,...(snapshot.availableJobs||[]),...snapshot.characters.map(r=>r.job)])].sort((a,b)=>a.localeCompare(b,'ko')).map(n=>new Option(n,n)));
+  $('mystery-job-list').replaceChildren(...[...new Set([...jobs,...(snapshot.availableJobs||[]),...snapshot.characters.map(r=>r.job)])].filter(j=>!jobExcluded(j)).sort((a,b)=>a.localeCompare(b,'ko')).map(n=>new Option(n,n)));
   updateWorlds();
 }
 function updateWorlds() {
@@ -32,13 +32,14 @@ function podium(rank,character) {
   } else portrait.append(el('span','image-missing',character?'외형 이미지 미수집':'미수집'));
   container.append(portrait,el('h3','character-name',character?.name||'미수집'));
   container.append(el('p','character-info',character?`Lv.${character.level} · ${character.job} · ${character.world}`:'—'));
-  container.append(el('p','combat',character?character.combat.toLocaleString('ko-KR'):'—'),el('span','combat-caption',character?'전투력':''));
+  container.append(el('p','combat',character?character.combat.toLocaleString('ko-KR'):'—'),el('span','combat-caption',character?(character.calculation?'프리셋 계산 전투력':'착용 전투력'):''));
+  if(character?.calculation) container.append(el('p','preset-info',presetInfo(character)));
   container.append(el('div','podium-base',String(rank)));
 }
 function render() {
-  const o=options(); let ranked;
-  try { ranked=filterRank(snapshot.characters,o); } catch(e) { $('feedback').textContent=e.message; return false; }
-  const count=snapshot.selectionCounts?Object.entries(snapshot.selectionCounts).filter(([lv])=>Number(lv)>=Number(o.min)&&Number(lv)<=Number(o.max)).reduce((sum,[,n])=>sum+n,0):ranked.length;
+  const o=options(),excluded=jobExcluded(o.job); let ranked;
+  try { ranked=excluded?[]:filterRank(snapshot.characters,o); } catch(e) { $('feedback').textContent=e.message; return false; }
+  const count=excluded?0:snapshot.selectionCounts?Object.entries(snapshot.selectionCounts).filter(([lv])=>Number(lv)>=Number(o.min)&&Number(lv)<=Number(o.max)).reduce((sum,[,n])=>sum+n,0):ranked.length;
   for(let i=1;i<=3;i++) podium(i,ranked[i-1]);
   $('result-subtitle').textContent=`${o.min===o.max?o.min:o.min+'~'+o.max}레벨 · ${o.job||'전체 직업'} · ${WORLD_GROUPS[o.group].label} / ${o.world||'분류 전체'} · 확인된 ${count.toLocaleString('ko-KR')}명`;
   $('data-status').textContent=busy?'불러오는 중':failure||`${local?'내 파일 · ':''}${ranked.length?'수집본 내 순위':'선택 조건 미수집'}`;
@@ -48,10 +49,13 @@ function render() {
   $('snapshot-updated').textContent=snapshot.updated_at?new Date(snapshot.updated_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false})+' (한국시간)':local?'내 파일 미리보기':'등록 전';
   $('snapshot-scope').textContent=`${c.level_min}~${c.level_max}레벨 · ${c.worlds.length}개 월드 · ${c.jobs.length}개 직업`;
   $('snapshot-source').textContent=snapshot.source;
-  $('snapshot-progress').textContent=snapshot.collection?`수집 ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.state==='collecting'?'수집 진행 중':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
+  const preset=c.combat_basis==='preset';
+  $('snapshot-progress').textContent=snapshot.collection?`${preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':snapshot.collection.unverified?'일부 검증 보류':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
+  $('snapshot-basis').textContent=preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'현재 착용 상태의 API 전투력으로 비교합니다.';
+  $('snapshot-exclusions').textContent=`제논·데몬어벤져 집계 제외${snapshot.collection?.unverified?` · 계산 검증 보류 ${snapshot.collection.unverified.toLocaleString('ko-KR')}명`:''}`;
   updateDownloads();
-  $('coverage-note').textContent=failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'수집 중 · 순위가 바뀔 수 있습니다. ':''}수집된 캐릭터 안에서 비교한 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
-  const rows=ranked.slice(3,10).map((r,i)=>{ const row=el('tr'); for(const v of [i+4,r.name,r.world,r.job,r.level,r.combat.toLocaleString('ko-KR')]) row.append(el('td','',String(v))); return row; });
+  $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'일부 수집 · 순위가 바뀔 수 있습니다. ':''}${preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
+  const rows=ranked.slice(3,10).map((r,i)=>{ const row=el('tr'); for(const v of [i+4,r.name,r.world,r.job,r.level]) row.append(el('td','',String(v)));const combat=el('td','',r.combat.toLocaleString('ko-KR')); if(r.calculation) combat.append(el('small','preset-info',presetInfo(r))); row.append(combat);return row; });
   if(!rows.length) { const row=el('tr'),cell=el('td','empty-table','4~10위에 표시할 수집 기록이 없습니다.'); cell.colSpan=6; row.append(cell); rows.push(row); }
   $('rank-rows').replaceChildren(...rows); $('local-notice').hidden=!local; $('public-reset').hidden=!local; return true;
 }
@@ -77,7 +81,7 @@ if(!params.has('group')&&$('world').value) $('world-group').value=worldGroup($('
 if(Number($('min-level').value)>Number($('max-level').value)) { $('min-level').value=String(MIN_LEVEL); $('max-level').value=String(MAX_LEVEL); $('feedback').textContent='링크의 레벨 범위가 올바르지 않아 290~300으로 표시합니다.'; }
 addDataOptions();
 $('world-group').addEventListener('change',updateWorlds);
-$('mystery-form').addEventListener('submit',async e=>{ e.preventDefault(); $('feedback').textContent=''; try { filterRank([],options()); } catch(err) { $('feedback').textContent=err.message; return; } const ok=local?render():await loadPublic(); if(ok) { history.replaceState(null,'',urlFor(options())); $('feedback').textContent='검색 조건을 적용했습니다.'; } });
+$('mystery-form').addEventListener('submit',async e=>{ e.preventDefault(); $('feedback').textContent=''; if(jobExcluded(options().job)) {render();return;} try { filterRank([],options()); } catch(err) { $('feedback').textContent=err.message; return; } const ok=local?render():await loadPublic(); if(ok) { history.replaceState(null,'',urlFor(options())); $('feedback').textContent='검색 조건을 적용했습니다.'; } });
 $('share-btn').addEventListener('click',async()=>{
   try { filterRank([],options()); } catch(e) { $('feedback').textContent=e.message; return; }
   if(!(local?render():await loadPublic())) return; const url=urlFor({...options(),date:snapshot.coverage.data_date||options().date}).href;
@@ -114,6 +118,10 @@ function updateDownloads() {
 function showOutfit(character) {
   const dialog=$('outfit-dialog'),image=$('outfit-image'); $('outfit-title').textContent=character.name+' · '+character.world;image.src=character.image;image.alt=character.name+' 실제 캐릭터 코디';
   dialog.showModal();
+}
+function presetInfo(character) {
+  const p=character.calculation.presets;
+  return `장비 ${p.equipment} · 하이퍼 ${p.hyper} · 어빌 ${p.ability} · 유니온 ${p.union}`;
 }
 $('outfit-close').addEventListener('click',()=>$('outfit-dialog').close());
 $('outfit-dialog').addEventListener('click',e=>{if(e.target===$('outfit-dialog')) $('outfit-dialog').close();});

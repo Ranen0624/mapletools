@@ -58,6 +58,26 @@ test('scope and exhaustive claims are explicit and bounded to selected scope',()
   assert.equal(validateSnapshot(s).characters.length,1);
 });
 test('CSV export prevents formula execution',()=>{ const s=prepareSnapshot([row(0,{name:'=CHECK_ONLY'})]); assert(snapshotCSV(s).includes("'=CHECK_ONLY")); });
+
+const calculation={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:2,ability:3,union:10},version:'preset-api-v1',observed_at:'2026-10-20T07:00:00Z',combinations:270};
+test('preset records preserve their evidence through JSON and CSV and reject unverified or mixed bases',()=>{
+  const s=prepareSnapshot([row(0,{combat:200,calculation:{...calculation,api_key:'NEVER_PUBLISH',presets:{...calculation.presets,secret:'NEVER_PUBLISH'}}})]);
+  assert.equal(s.coverage.combat_basis,'preset');assert.equal(s.characters[0].calculation.api_combat,100);
+  assert.equal(JSON.stringify(s).includes('NEVER_PUBLISH'),false);
+  assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+  assert.deepEqual(validateSnapshot(s),s);
+  for(const c of [{...calculation,baseline_combat:99},{...calculation,api_combat:201,baseline_combat:201},{...calculation,combinations:271},{...calculation,presets:{...calculation.presets,union:11}},{...calculation,observed_at:'invalid'}]) assert.throws(()=>prepareSnapshot([row(0,{combat:200,calculation:c})]));
+  assert.throws(()=>prepareSnapshot([row(0,{calculation}),row(1)]),/기준/);
+  assert.throws(()=>prepareSnapshot([row(0,{calculation})],{coverage:{combat_basis:'equipped'}}),/기준/);
+  assert.throws(()=>filterRank([row(0,{calculation}),row(1)]),/한 순위/);
+});
+
+test('Xenon and Demon Avenger never enter any ranking scope',()=>{
+  const rows=[row(),row(1,{job:'제논',combat:999}),row(2,{job:'데몬어벤져',combat:998}),row(3,{job:'비숍',combat:110})];
+  assert.deepEqual(filterRank(rows).map(r=>r.job),['비숍','아델']);
+  assert.throws(()=>filterRank(rows,{job:'제논'}),/집계에서 제외/);
+  assert.throws(()=>filterRank(rows,{job:'데몬어벤져'}),/집계에서 제외/);
+});
 test('regular, Eos/Helios and unknown event worlds never share a podium',()=>{
   const rows=[row(0),row(1,{world:'에오스',combat:999}),row(2,{world:'핼리오스',combat:998}),row(3,{world:'챌린저스',combat:997})];
   assert.deepEqual(filterRank(rows).map(r=>r.world),['루나']);

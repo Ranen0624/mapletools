@@ -1,4 +1,4 @@
-import {MAX_CSV_BYTES,MIN_LEVEL,MAX_LEVEL,WORLD_GROUPS,worldGroup,prepareSnapshot,validateSnapshot,validDate} from './mystery-core.js?v=7';
+import {MAX_CSV_BYTES,MIN_LEVEL,MAX_LEVEL,WORLD_GROUPS,worldGroup,jobExcluded,prepareSnapshot,validateSnapshot,validDate} from './mystery-core.js?v=8';
 const poolsByFetcher=new WeakMap();
 const historyPath=(file,date)=>typeof file==='string'&&new RegExp(`^data/mystery-history/${date}/[a-f0-9]{64}\\.json$`).test(file);
 async function readPool(pool,date,base,fetcher) {
@@ -57,8 +57,8 @@ export async function loadRankingSource({fetcher=fetch,base=new URL('.',import.m
     if(!Object.hasOwn(WORLD_GROUPS,group)) throw Error('월드 분류를 확인하세요.');
     const query=index.queries.find(q=>q.group===group && q.world===(options.world||'') && q.job===(options.job||''));
     const collection=index.collection;
-    if(collection && (!['collecting','scanned'].includes(collection.state) || ['candidates','processed','pending','failed','verified',...(Object.hasOwn(collection,'skipped')?['skipped']:[])].some(k=>!Number.isSafeInteger(collection[k])||collection[k]<0) || collection.processed+collection.pending+(collection.skipped||0)!==collection.candidates || collection.verified!==index.verified)) throw Error('공개 수집 진행 정보를 확인하세요.');
-    const extras={...(availableDates.length?{availableDates}:{}),availableJobs:index.jobs,availableWorlds:index.worlds,selectionCounts:{},downloadJSON:null,downloadCSV:null,...(collection?{collection}:{} )};
+    if(collection && (!['collecting','scanned'].includes(collection.state) || ['candidates','processed','pending','failed','verified',...['skipped','unverified','calculating','scope_excluded'].filter(k=>Object.hasOwn(collection,k))].some(k=>!Number.isSafeInteger(collection[k])||collection[k]<0) || collection.processed+collection.pending+(collection.skipped||0)!==collection.candidates || collection.verified!==index.verified)) throw Error('공개 수집 진행 정보를 확인하세요.');
+    const extras={...(availableDates.length?{availableDates}:{}),availableJobs:index.jobs.filter(j=>!jobExcluded(j)),availableWorlds:index.worlds,selectionCounts:{},downloadJSON:null,downloadCSV:null,...(collection?{collection}:{} )};
     if(!query) return {...prepareSnapshot([],{date:index.data_date,source:index.source,coverage:index.coverage,updatedAt:index.updated_at}),...extras};
     if((index.schema_version===1&&!/^data\/mystery-cache\/[a-f0-9]{64}\.json$/.test(query.file)) || !Array.isArray(query.counts)) throw Error('공개 데이터 파일 정보를 확인하세요.');
     const counts=new Map(query.counts);
