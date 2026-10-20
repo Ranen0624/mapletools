@@ -1,0 +1,13 @@
+name = "mapletools-mystery"
+main = "mystery-worker.js"
+compatibility_date = "2026-10-20"
+
+[vars]
+PUBLIC_ORIGIN = "https://mapletools.kr"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mapletools-mystery"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# No cron is enabled in the first release. See docs/mystery-operations.md.
