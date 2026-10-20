@@ -14,5 +14,6 @@
       "verified": 160101,
       "updated_at": "2026-10-20T07:38:27.094Z"
     }
-  ]
+  ],
+  "retention_days": 7
 }

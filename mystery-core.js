@@ -151,14 +151,14 @@ export function validateSnapshot(data) {
   if (updatedAt !== null && (typeof updatedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(updatedAt) || Number.isNaN(Date.parse(updatedAt)))) throw Error('공개 갱신 시각이 올바르지 않습니다.');
   return prepareSnapshot(data.characters,{date:data.coverage.data_date || '',source:data.source,coverage:data.coverage,updatedAt});
 }
-export function parseImport(text, {format='csv',date=''} = {}) {
+function importRows(text, {format='csv',date=''} = {}) {
   if (new TextEncoder().encode(text).length > MAX_CSV_BYTES) throw Error('파일 용량은 5MB 이하여야 합니다.');
   if (format === 'json') {
     let data;
     try { data = JSON.parse(text.replace(/^\uFEFF/,'')); } catch { throw Error('JSON 형식을 확인하세요.'); }
     const rows = Array.isArray(data) ? data : data?.characters;
     // A local file cannot claim exhaustive collection.
-    return prepareSnapshot(rows,{date:date || data?.coverage?.data_date || ''});
+    return {rows,date:date || data?.coverage?.data_date || ''};
   }
   const table = parseCSV(text), headers = (table.shift() || []).map(v => v.trim().toLowerCase());
   if (new Set(headers).size !== headers.length) throw Error('CSV에 중복된 열 이름이 있습니다.');
@@ -167,7 +167,18 @@ export function parseImport(text, {format='csv',date=''} = {}) {
     if (cells.length !== headers.length) throw Error(`${i+2}번째 CSV 행의 열 개수가 다릅니다.`);
     return Object.fromEntries(headers.map((h,i) => [h,cells[i]]));
   });
-  return prepareSnapshot(rows,{date});
+  return {rows,date};
+}
+export function parseImport(text,options={}) {const {rows,date}=importRows(text,options);return prepareSnapshot(rows,{date});}
+// Personal history can contain older and multiple dates. Each date remains a
+// separate snapshot so scores from different days never share one ranking.
+export function parseLocalImport(text,options={}) {
+  const {rows,date}=importRows(text,options);
+  if(!Array.isArray(rows)||rows.length>50000)throw Error('캐릭터 배열은 50,000행 이하여야 합니다.');
+  const groups=new Map();
+  rows.forEach((row,i)=>{const r=normalizeCharacter(row,date);if(!r)throw Error(`${i+1}번째 기록의 닉네임·월드·직업·레벨·전투력·기준일·이미지를 확인하세요.`);if(!groups.has(r.observedAt))groups.set(r.observedAt,[]);groups.get(r.observedAt).push(r);});
+  const dates=[...groups.keys()].sort().reverse();
+  return dates.map(day=>({...prepareSnapshot(groups.get(day),{date:day,source:'내 파일 기록'}),availableDates:dates}));
 }
 export async function parseImportedCSV(text, options={}) { return parseImport(text,options).characters; }
 export function snapshotCSV(snapshot) {
