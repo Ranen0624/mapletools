@@ -85,7 +85,7 @@ test('interim data shows actual population and unfinished collection above the p
     collection:{state:'collecting',verified:1000,candidates:10000,pending:8000},selectionCounts:{290:200,291:30,292:2}};
   const dom=await setup(source),d=dom.window.document;
   assert.match(d.getElementById('data-status').textContent,/수집본 내 순위/);
-  assert.match(d.getElementById('snapshot-progress').textContent,/수집 1,000명.*수집 진행 중/);
+  assert.match(d.getElementById('snapshot-progress').textContent,/수집 1,000명.*수집 중/);
   assert.match(d.getElementById('result-subtitle').textContent,/확인된 232명/);
   assert.equal(d.querySelectorAll('.uncollected').length,0); dom.window.close();
 });
@@ -111,4 +111,15 @@ test('official outfit opens an accessible larger view and can be closed',async()
   assert.equal(dialog.open,true);assert.match(d.getElementById('outfit-title').textContent,/검증전용0/);
   assert.equal(d.getElementById('outfit-image').src,d.querySelector('.portrait img').src);
   d.getElementById('outfit-close').click();assert.equal(dialog.open,false);dom.window.close();
+});
+
+test('preset scores show their selected combinations and excluded job queries clear the podium',async()=>{
+  const calculation={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:2,ability:3,union:5},version:'preset-api-v1',observed_at:'2026-10-20T07:00:00Z',combinations:90};
+  const s=core.prepareSnapshot([row(0,{combat:200,calculation})]);
+  const dom=await setup({...s,availableJobs:['제논','데몬어벤져','아델']}),d=dom.window.document,w=dom.window;
+  assert.match(d.querySelector('#podium-1 .combat-caption').textContent,/프리셋 계산/);
+  assert.match(d.querySelector('#podium-1 .preset-info').textContent,/장비 1.*하이퍼 2.*어빌 3.*유니온 5/);
+  assert.equal([...d.querySelectorAll('#mystery-job-list option')].some(o=>['제논','데몬어벤져'].includes(o.value)),false);
+  d.getElementById('job').value='제논';d.getElementById('mystery-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();
+  assert.equal(d.querySelectorAll('.uncollected').length,3);assert.match(d.getElementById('coverage-note').textContent,/집계에서 제외/);dom.window.close();
 });

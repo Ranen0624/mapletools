@@ -1,14 +1,18 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-19",
-  "publication_status": "scanned",
+  "data_date": "2026-10-20",
+  "publication_status": "interim",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
-    "combat": "character/stat final_stat[stat_name=전투력]"
+    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination"
   },
-  "ranking_basis": "API combat_power descending; API basic level/job/world only",
+  "ranking_basis": "calculated preset combat_power descending; exact equipped baseline validation required",
+  "excluded_jobs": [
+    "제논",
+    "데몬어벤져"
+  ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 741867,
+  "candidates": 198553,
   "candidate_groups": {
     "regular": 694499,
     "eos-helios": 47368
@@ -16,23 +20,26 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 165274,
+  "published_characters": 6406,
   "api_verified_groups": {
-    "regular": 154251,
-    "eos-helios": 11023
+    "regular": 4462,
+    "eos-helios": 1944
   },
   "collection": {
-    "state": "scanned",
-    "candidates": 741867,
-    "processed": 363503,
-    "pending": 0,
+    "state": "collecting",
+    "candidates": 198553,
+    "processed": 14748,
+    "pending": 183805,
     "failed": 0,
-    "skipped": 378364,
-    "outside": 197413,
-    "unavailable": 816,
-    "verified": 165274,
+    "skipped": 0,
+    "outside": 121,
+    "unavailable": 6161,
+    "verified": 6406,
+    "unverified": 1959,
+    "calculating": 101,
+    "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-20T06:38:24.155606+00:00"
+    "as_of": "2026-10-20T07:48:29.535383+00:00"
   },
   "discovery_coverage": [
     {

@@ -1,12 +1,18 @@
 {
   "schema_version": 1,
-  "latest": "2026-10-19",
+  "latest": "2026-10-20",
   "dates": [
     {
+      "date": "2026-10-20",
+      "index": "data/mystery-history/2026-10-20/61d1a2e76e63031c49abcab213fd6428331e522362c2065f68145c55cc9cca62.json",
+      "verified": 6406,
+      "updated_at": "2026-10-20T07:48:30.426Z"
+    },
+    {
       "date": "2026-10-19",
-      "index": "data/mystery-history/2026-10-19/bc0a4b53cb33e55cbd9952e6cf3513636a3346613242040277aeeca1837ad26d.json",
-      "verified": 165274,
-      "updated_at": "2026-10-20T06:38:26.786Z"
+      "index": "data/mystery-history/2026-10-19/a1808f2fd7898ccda1f4d1709770e1642f1e41ac7a36941532e684807c1ae41a.json",
+      "verified": 160101,
+      "updated_at": "2026-10-20T07:38:27.094Z"
     }
   ]
 }

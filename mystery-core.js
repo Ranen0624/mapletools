@@ -2,6 +2,8 @@
 import {parseCSV} from './csv-statistics.js';
 export const MIN_LEVEL = 290;
 export const MAX_LEVEL = 300;
+export const EXCLUDED_JOBS = Object.freeze(['제논','데몬어벤져']);
+export const jobExcluded = job => EXCLUDED_JOBS.includes(String(job).replaceAll(' ',''));
 export const MAX_CSV_BYTES = 5 * 1024 * 1024;
 export const WORLD_GROUPS = {
   regular: {label:'일반 월드',worlds:['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바']},
@@ -52,7 +54,22 @@ export function normalizeCharacter(row, fallbackDate = '') {
       !Number.isSafeInteger(combat) || combat <= 0 || !validDate(observedAt)) return null;
   const rawImage = String(get('image')).trim(), image = imageAllowed(rawImage);
   if (rawImage && !image) return null;
-  return {name,world,job,level,combat,image,observedAt,ocid:clean(get('ocid'))};
+  let calculation;
+  if(Object.hasOwn(row,'calculation')) {
+    let c=row.calculation;
+    if(typeof c==='string') { try {c=JSON.parse(c);} catch {return null;} }
+    const p=c?.presets;
+    if(!c || c.basis!=='preset' || !Number.isSafeInteger(c.api_combat) || c.api_combat<=0 ||
+        c.baseline_combat!==c.api_combat || combat<c.api_combat || !p ||
+        ['equipment','hyper','ability','union'].some(k=>!Number.isInteger(p[k])||p[k]<1||p[k]>(k==='union'?10:3)) ||
+        !Number.isInteger(c.combinations)||c.combinations<1||c.combinations>270 ||
+        typeof c.version!=='string'||!/^preset-api-v\d+$/.test(c.version)||
+        typeof c.observed_at!=='string'||!/^\d{4}-\d{2}-\d{2}T/.test(c.observed_at)||Number.isNaN(Date.parse(c.observed_at))) return null;
+    calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
+      presets:Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])),
+      version:c.version,observed_at:c.observed_at,combinations:c.combinations};
+  }
+  return {name,world,job,level,combat,image,observedAt,ocid:clean(get('ocid')),...(calculation?{calculation}:{})};
 }
 export function uniqueCharacters(rows) {
   const byName = new Map(), byOcid = new Map(), result = [];
@@ -64,7 +81,7 @@ export function uniqueCharacters(rows) {
     if (previous !== undefined) {
       const old = result[previous];
       if (row.observedAt > old.observedAt) result[previous] = row;
-      else if (row.observedAt === old.observedAt && (row.combat !== old.combat || row.level !== old.level || row.job !== old.job || row.world !== old.world || row.name !== old.name || (row.image && old.image && row.image !== old.image))) {
+      else if (row.observedAt === old.observedAt && (row.combat !== old.combat || row.level !== old.level || row.job !== old.job || row.world !== old.world || row.name !== old.name || JSON.stringify(row.calculation)!==JSON.stringify(old.calculation) || (row.image && old.image && row.image !== old.image))) {
         throw Error('동일 캐릭터·기준일의 기록이 충돌합니다. 원본을 확인하세요.');
       } else if (row.observedAt === old.observedAt) result[previous] = {...old,image:old.image || row.image,ocid:old.ocid || row.ocid};
       byName.set(key, previous);
@@ -82,12 +99,14 @@ export function filterRank(rows, options = {}) {
   const min = Number(options.min ?? MIN_LEVEL), max = Number(options.max ?? MAX_LEVEL);
   const job = String(options.job || '').trim(), world = String(options.world || '').trim();
   const group = options.group || (world ? worldGroup(world) : 'regular');
+  if(jobExcluded(job)) throw Error('제논·데몬어벤져는 집계에서 제외합니다.');
   if (!Object.hasOwn(WORLD_GROUPS,group)) throw Error('월드 분류를 확인하세요.');
   if (world && worldGroup(world) !== group) throw Error('월드 분류와 선택한 월드가 일치하지 않습니다.');
   if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('레벨은 290~300 사이에서 최소 ≤ 최대가 되도록 선택하세요.');
   const dates = new Set(rows.map(r => normalizeCharacter(r)?.observedAt).filter(Boolean));
   if (dates.size > 1) throw Error('서로 다른 기준일의 기록은 한 순위로 비교할 수 없습니다.');
-  return uniqueCharacters(rows).filter(r => r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
+  if(new Set(rows.map(r=>r.calculation?'preset':'equipped')).size>1) throw Error('착용 전투력과 프리셋 계산 전투력은 한 순위로 비교할 수 없습니다.');
+  return uniqueCharacters(rows).filter(r => !jobExcluded(r.job) && r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
 export function emptySnapshot() {
@@ -107,6 +126,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   if (dates.length > 1 || (date && dates.length && dates[0] !== date)) throw Error('하나의 공개 수집본에는 동일한 기준일의 기록만 넣어 주세요.');
   if (date && !validDate(date)) throw Error('기준일은 YYYY-MM-DD 형식의 실제 날짜여야 합니다.');
   const characters = uniqueCharacters(normalized);
+  const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
+  if(bases.size>1 || (coverage.combat_basis && !['preset','equipped'].includes(coverage.combat_basis)) ||
+      (coverage.combat_basis && bases.size && !bases.has(coverage.combat_basis))) throw Error('전투력 집계 기준이 일치하지 않습니다.');
   const list = v => Array.isArray(v) ? [...new Set(v.map(x => clean(x)).filter(Boolean))] : [];
   const min = Number(coverage.level_min ?? MIN_LEVEL), max = Number(coverage.level_max ?? MAX_LEVEL);
   if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('수집 범위 레벨이 올바르지 않습니다.');
@@ -119,7 +141,8 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     jobs:jobs.length ? jobs : [...new Set(characters.map(r => r.job))],
     worlds:worlds.length ? worlds : [...new Set(characters.map(r => r.world))],
     description:clean(coverage.description,500) || (characters.length ? '업로드한 검색 결과 범위' : '최초 수집 파일 등록 전입니다.'),
-    limitations:list(coverage.limitations),...(status === 'complete' ? {expected_count:characters.length} : {}),
+    limitations:list(coverage.limitations),...(coverage.combat_basis||bases.has('preset')?{combat_basis:coverage.combat_basis||'preset'}:{}),
+    ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }
 export function validateSnapshot(data) {
@@ -149,8 +172,9 @@ export function parseImport(text, {format='csv',date=''} = {}) {
 export async function parseImportedCSV(text, options={}) { return parseImport(text,options).characters; }
 export function snapshotCSV(snapshot) {
   const headers = ['character_name','world_name','character_class','character_level','combat_power','character_image','data_date'];
+  const calculated=snapshot.characters.some(r=>r.calculation); if(calculated) headers.push('calculation');
   const cell = v => '"' + String(v).replace(/^[=+@-]/,"'$&").replaceAll('"','""') + '"';
-  return '\uFEFF' + [headers,...snapshot.characters.map(r => [r.name,r.world,r.job,r.level,r.combat,r.image,r.observedAt])].map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
+  return '\uFEFF' + [headers,...snapshot.characters.map(r => [r.name,r.world,r.job,r.level,r.combat,r.image,r.observedAt,...(calculated?[JSON.stringify(r.calculation)]:[])])].map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 export function collectionStatus(snapshot, options, count) {
   const c = snapshot.coverage;
