@@ -7,9 +7,10 @@ const html=await readFile(new URL('../mystery.html',import.meta.url),'utf8');
 const code=(await readFile(new URL('../mystery.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'');
 const flush=()=>new Promise(r=>setTimeout(r,0));
 const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:290+Math.min(n,10),combat:100+n,observedAt:'2026-10-19',...extra});
-async function setup(source=core.emptySnapshot(),url='https://example.test/mystery.html') {
+async function setup(source=core.emptySnapshot(),url='https://example.test/mystery.html',detail=async()=>null) {
   const dom=new JSDOM(html,{url,runScripts:'outside-only'}),w=dom.window;
-  Object.assign(w,core,{TextDecoder,loadRankingSource:async options=>{if(source instanceof Error) throw source;return typeof source==='function'?source(options):source;}});
+  Object.assign(w,core,{TextDecoder,loadCharacterDetail:detail,loadRankingSource:async options=>{if(source instanceof Error) throw source;return typeof source==='function'?source(options):source;}});
+  const dialog=w.document.getElementById('outfit-dialog');dialog.showModal=()=>dialog.open=true;dialog.close=()=>{dialog.open=false;dialog.dispatchEvent(new w.Event('close'));};
   w.eval(code); await flush(); return dom;
 }
 test('public empty page shows three uncollected places and no images or values',async()=>{
@@ -106,7 +107,6 @@ test('date selector keeps the chosen snapshot in shared links and missing dates 
 test('official outfit opens an accessible larger view and can be closed',async()=>{
   const dom=await setup(core.prepareSnapshot([row(0,{image:'https://open.api.nexon.com/static/maplestory/character/look/VALIDATION_ONLY'})]));
   const d=dom.window.document,dialog=d.getElementById('outfit-dialog');
-  dialog.showModal=()=>dialog.open=true;dialog.close=()=>dialog.open=false;
   d.querySelector('#podium-1 button.portrait').click();
   assert.equal(dialog.open,true);assert.match(d.getElementById('outfit-title').textContent,/검증전용0/);
   assert.equal(d.getElementById('outfit-image').src,d.querySelector('.portrait img').src);
@@ -122,4 +122,49 @@ test('preset scores show their selected combinations and excluded job queries cl
   assert.equal([...d.querySelectorAll('#mystery-job-list option')].some(o=>['제논','데몬어벤져'].includes(o.value)),false);
   d.getElementById('job').value='제논';d.getElementById('mystery-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();
   assert.equal(d.querySelectorAll('.uncollected').length,3);assert.match(d.getElementById('coverage-note').textContent,/집계에서 제외/);dom.window.close();
+});
+
+test('every TOP 10 name opens details, real item text is safe, and previous/next uses the selected ranking',async()=>{
+  const source=core.prepareSnapshot(Array.from({length:10},(_,i)=>row(i)));
+  const dom=await setup(source,undefined,async()=>({gender:'여',guild:'테스트길드',outfit_source:'preset',cash_preset:2,items:[{slot:'모자',name:'<img src=x onerror=alert(1)>',label:'스페셜라벨'}]}));
+  const d=dom.window.document;
+  assert.equal(d.querySelectorAll('.name-button').length,10);
+  const fourth=d.querySelector('#rank-rows .name-button');fourth.focus();fourth.click();await flush();
+  assert.match(d.getElementById('profile-rank').textContent,/4위/);assert.match(d.getElementById('profile-subtitle').textContent,/아델.*루나/);
+  assert.equal(d.getElementById('outfit-title').textContent,'검증전용6');assert.equal(d.getElementById('profile-power').textContent,'106');
+  assert.match(d.getElementById('profile-facts').textContent,/테스트길드/);assert.match(d.getElementById('profile-outfit-preset').textContent,/프리셋 2/);
+  assert.equal(d.querySelector('#profile-outfit-items strong').textContent,'<img src=x onerror=alert(1)>');assert.equal(d.querySelectorAll('#profile-outfit-items img').length,0);
+  d.getElementById('profile-next').click();await flush();assert.match(d.getElementById('profile-rank').textContent,/5위/);
+  d.getElementById('profile-prev').click();await flush();assert.match(d.getElementById('profile-rank').textContent,/4위/);
+  d.getElementById('outfit-close').click();assert.equal(d.activeElement,fourth);assert.equal(d.body.classList.contains('profile-open'),false);dom.window.close();
+});
+
+test('a slow detail response never replaces another character, and missing/error states are distinct',async()=>{
+  const pending=[],dom=await setup(core.prepareSnapshot([row(),row(1)]),undefined,()=>new Promise((resolve,reject)=>pending.push({resolve,reject})));
+  const d=dom.window.document;d.querySelector('#podium-1 .name-button').click();d.getElementById('profile-next').click();
+  pending[1].resolve(null);await flush();assert.match(d.getElementById('profile-detail-status').textContent,/미수집/);
+  pending[0].resolve({gender:'여',guild:'SHOULD_NOT_APPEAR',items:[],outfit_source:'base'});await flush();assert.equal(d.getElementById('profile-facts').textContent.includes('SHOULD_NOT_APPEAR'),false);
+  d.getElementById('profile-prev').click();pending[2].reject(new Error('private diagnostic'));await flush();
+  assert.match(d.getElementById('profile-detail-status').textContent,/불러오지 못/);assert.equal(d.body.textContent.includes('private diagnostic'),false);
+  d.querySelector('.detail-retry').click();pending[3].resolve(null);await flush();assert.match(d.getElementById('profile-detail-status').textContent,/미수집/);dom.window.close();
+});
+
+test('personal CSV older than seven days provides date-isolated statistics without fetching public rankings',async()=>{
+  let requests=0;const dom=await setup(()=>{requests++;return core.emptySnapshot();}),w=dom.window,d=w.document;
+  const csv='닉네임,월드,직업,레벨,전투력,기준일\n기록하나,루나,아델,290,100,2020-01-01\n기록둘,루나,아델,291,300,2020-01-01\n기록하나,루나,아델,292,500,2020-01-02';
+  const file={name:'old.csv',size:new TextEncoder().encode(csv).length,arrayBuffer:async()=>new TextEncoder().encode(csv).buffer};
+  Object.defineProperty(d.getElementById('csv-input'),'files',{value:[file]});d.getElementById('import-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();await flush();
+  assert.equal(d.getElementById('local-analysis').hidden,false);assert.match(d.getElementById('analysis-metrics').textContent,/500/);assert.equal(d.getElementById('snapshot-date').textContent,'2020-01-02');
+  d.getElementById('data-date').value='2020-01-01';d.getElementById('mystery-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();
+  assert.deepEqual([...d.querySelectorAll('#analysis-metrics dd')].map(e=>e.textContent),['2명','300','200','200']);
+  assert.equal(d.getElementById('snapshot-date').textContent,'2020-01-01');assert.equal(requests,1);assert.match(d.getElementById('history-retention').textContent,/관계없이/);
+  d.getElementById('public-reset').click();await flush();assert.equal(requests,2);assert.equal(d.getElementById('local-analysis').hidden,true);dom.window.close();
+});
+
+test('shared site navigation, exclusion explanation and filter reset are usable on the ranking page',async()=>{
+  const dom=await setup(core.emptySnapshot(),'https://example.test/mystery.html?min=295&max=299&group=eos-helios&job=렌'),d=dom.window.document;
+  assert.equal(d.querySelector('header.site-header #main-nav a[aria-current=page]').textContent,'명예의 전당');assert.match(d.querySelector('.scope-explanation').textContent,/API.*현재 착용 전투력.*사냥 세팅.*정확도/s);
+  d.getElementById('filter-reset').click();await flush();assert.equal(d.getElementById('min-level').value,'290');assert.equal(d.getElementById('max-level').value,'300');assert.equal(d.getElementById('job').value,'');assert.equal(d.getElementById('world-group').value,'regular');
+  const app=await readFile(new URL('../app.js',import.meta.url),'utf8');dom.window.matchMedia=()=>({matches:true,addEventListener(){}});dom.window.IntersectionObserver=class{observe(){} disconnect(){}};dom.window.eval(app);
+  const toggle=d.querySelector('.menu-toggle');toggle.click();assert.equal(toggle.getAttribute('aria-expanded'),'true');d.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(toggle.getAttribute('aria-expanded'),'false');dom.window.close();
 });
