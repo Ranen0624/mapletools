@@ -13,3 +13,10 @@ tests/evidence/layers-*.png
 
 # Generated verification outputs stay local.
 tests/evidence/
+.local-pnpm-store/
+private-imports/
+.env
+.env.*
+.dev.vars*
+.wrangler/
+cloudflare/wrangler.toml

@@ -1,7 +1,18 @@
 {
   "schema_version": 1,
   "updated_at": null,
-  "complete": false,
-  "source": "NEXON Open API",
+  "source": "PC 검색 결과 · NEXON Open API",
+  "coverage": {
+    "status": "uncollected",
+    "data_date": null,
+    "level_min": 280,
+    "level_max": 300,
+    "jobs": [],
+    "worlds": [],
+    "description": "최초 수집 파일 등록 전입니다.",
+    "limitations": [
+      "전체 캐릭터를 수집한 공식 랭킹이 아닙니다."
+    ]
+  },
   "characters": []
 }
