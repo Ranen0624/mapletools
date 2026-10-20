@@ -2,3 +2,5 @@
 data/mystery-*.csv -text
 data/mystery-cache/*.csv -text
 data/mystery-cache/*.json text eol=lf
+
+data/mystery-history/**/*.json text eol=lf
