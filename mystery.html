@@ -5,30 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0c1020">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://open.api.nexon.com; connect-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>미스터리 파일 · 레벨별 최강자 TOP 3 | 메이플툴즈</title>
-<meta name="description" content="메이플툴즈 미스터리 파일. 실제 수집된 캐릭터 가운데 레벨·직업·월드 조건에 맞는 전투력 TOP 3를 금·은·동 시상대에서 확인하세요.">
+<title>전투력 명예의 전당 · 레벨별 TOP 10 | 메이플툴즈</title>
+<meta name="description" content="메이플툴즈 전투력 명예의 전당. 실제 수집한 캐릭터의 레벨·직업·월드별 프리셋 전투력 순위와 코디 착용 정보를 확인하세요.">
 <link rel="canonical" href="https://mapletools.kr/mystery.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="미스터리 파일 | 메이플툴즈 최강자 시상식">
+<meta property="og:title" content="전투력 명예의 전당 | 메이플툴즈">
 <meta property="og:description" content="레벨·직업·월드별 전투력 TOP 3. 실제 캐릭터 외형과 함께 확인하세요.">
 <meta property="og:url" content="https://mapletools.kr/mystery.html">
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="mystery.css?v=8">
-<script type="module" src="mystery.js?v=8"></script>
+<link rel="stylesheet" href="styles.css?v=release-204">
+<link rel="stylesheet" href="mystery.css?v=9">
+<script src="app.js?v=release-204" defer></script>
+<script type="module" src="mystery.js?v=9"></script>
 </head>
 <body>
 <a class="skip" href="#filters">검색 조건으로 바로가기</a>
-<header class="sitebar">
-  <a class="brand" href="index.html"><span class="brand-icon" aria-hidden="true">✦</span>Maple<span>Tools</span></a>
-  <nav aria-label="빠른 이동"><a href="index.html">홈페이지</a><a href="demo.html">검색기 체험</a><a href="coordi.html">코디 검색기</a></nav>
-  <span class="top-tag">MYSTERY FILE / 01</span>
-</header>
+<header class="site-header"><div class="container header-inner"><a class="brand" href="index.html" aria-label="MapleTools 홈"><img class="brand-mark" src="assets/mapletools-mark.svg" width="38" height="38" alt="" aria-hidden="true"><span>Maple<span class="brand-light">Tools</span></span></a><nav id="main-nav" aria-label="주 메뉴"><a href="index.html#features">주요 기능</a><a href="index.html#data-playground">내 결과 모아보기</a><a href="index.html#experience">웹 체험</a><a href="mystery.html" aria-current="page">명예의 전당</a><a href="terms.html">이용 안내</a></nav><a class="button small header-cta" href="index.html#download">다운로드 <span aria-hidden="true">↗</span></a><button class="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="main-nav" aria-expanded="false"><span></span><span></span></button></div></header>
 <main>
 <section class="masthead">
   <div class="masthead-inner">
-    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MYSTERY FILE 01</p>
-    <h1>미스터리 <span>파일</span><small>레벨별 최강자 시상식</small></h1>
-    <p class="lead">레벨·직업·월드별 전투력 TOP 3</p>
+    <nav class="breadcrumbs" aria-label="현재 위치"><a href="index.html">홈</a><span aria-hidden="true">/</span><span>명예의 전당</span></nav>
+    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MAPLETOOLS RANKING</p>
+    <h1>전투력 <span>명예의 전당</span></h1>
+    <p class="lead">레벨·직업·월드별 전투력 TOP 10</p>
   </div>
 </section>
 <div class="wrap">
@@ -45,11 +44,14 @@
     </div>
     <div class="actions">
       <button type="submit" class="btn primary" id="search-btn">최강자 찾기 <span aria-hidden="true">↗</span></button>
+      <button type="button" class="btn subtle" id="open-local-import">내 CSV 분석</button>
       <button type="button" class="btn subtle" id="share-btn">링크 복사 <span aria-hidden="true">↗</span></button>
+      <button type="button" class="btn subtle" id="filter-reset">조건 초기화</button>
       <button type="button" class="btn subtle" id="public-reset" hidden>공개 기록 보기</button>
     </div>
   </form>
   <p class="scope-note">290~300레벨 · 제논·데몬어벤져 제외</p>
+  <details class="scope-explanation"><summary>제논·데몬어벤져 제외 이유</summary><p>두 직업도 API에 표시되는 현재 착용 전투력은 조회할 수 있습니다. 다만 사냥 세팅 등 다른 프리셋의 전투력은 직접 계산해야 하며, 제논·데몬어벤져는 그 계산의 정확도가 확보되지 않아 이 순위에서 제외합니다.</p></details>
   <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
   <div id="share-fallback" hidden><label for="share-url">공유 링크</label><input id="share-url" readonly></div>
 </section>
@@ -57,11 +59,13 @@
   <p>기준일 <strong id="snapshot-date">미수집</strong></p><p id="snapshot-progress">불러오는 중</p>
   <p id="local-notice" class="local-notice" hidden>내 파일 미리보기 · 기기에서만 표시됩니다.</p>
 </section>
-<section class="result-section" aria-labelledby="results-title">
+<section id="local-analysis" class="local-analysis" aria-labelledby="analysis-title" hidden><h2 id="analysis-title">내 기록 분석</h2><dl id="analysis-metrics" class="analysis-metrics"></dl><p id="analysis-caption"></p></section>
+<section class="result-section" id="result-section" aria-labelledby="results-title">
   <div class="result-title">
     <div><h2 id="results-title">전투력 <em>TOP 3</em></h2><p id="result-subtitle">조건을 선택하고 검색하세요.</p></div>
     <div id="data-status" class="data-status" role="status" aria-live="polite">공개 데이터 확인 중</div>
   </div>
+  <p class="result-tip">캐릭터 이름을 누르면 코디와 상세 정보를 볼 수 있어요.</p>
   <div class="ceremony-board" aria-label="전투력 상위 3인 시상대">
     <div class="ceremony-spot silver" id="podium-2" data-rank="2"></div>
     <div class="ceremony-spot gold" id="podium-1" data-rank="1"></div>
@@ -73,20 +77,20 @@
     <div class="table-scroll"><table><thead><tr><th>순위</th><th>캐릭터</th><th>월드</th><th>직업</th><th>레벨</th><th>전투력</th></tr></thead><tbody id="rank-rows"><tr><td colspan="6" class="empty-table">검색 조건에 맞는 데이터가 아직 없습니다.</td></tr></tbody></table></div>
   </div>
 </section>
-<details class="import-card">
-  <summary>내 검색 결과 미리보기</summary>
-  <form id="import-form"><div class="import-grid"><div class="field"><label for="csv-input">CSV / JSON 파일 (최대 5MB)</label><input id="csv-input" type="file" accept=".csv,.json,text/csv,application/json" required></div><div class="field"><label for="import-date">기준일</label><input id="import-date" type="date"></div></div><button type="submit" class="btn primary">미리보기</button></form>
-  <p>기기에서만 표시됩니다. <a href="data/mystery-template.csv" download>CSV 양식</a></p>
+<details class="import-card" id="local-import">
+  <summary>내 CSV 기록 분석 <span>7일이 지난 기록도 가능</span></summary>
+  <form id="import-form"><div class="import-grid"><div class="field"><label for="csv-input">CSV / JSON 파일 (최대 5MB · 50,000행)</label><input id="csv-input" type="file" accept=".csv,.json,text/csv,application/json" required></div><div class="field"><label for="import-date">파일에 기준일이 없을 때</label><input id="import-date" type="date"></div></div><button type="submit" class="btn primary">내 기록 분석</button></form>
+  <p>기기에서만 분석하며 서버에 저장하지 않습니다. 날짜가 여러 개면 기준일을 골라 비교할 수 있습니다. <a href="data/mystery-template.csv" download>CSV 양식</a></p>
 </details>
 <details class="data-details">
   <summary>수집 정보 · 기록 다운로드</summary>
-  <p id="snapshot-scope"></p><p>갱신 <span id="snapshot-updated"></span></p><p id="snapshot-source"></p><p id="snapshot-basis"></p><p id="snapshot-exclusions"></p>
+  <p id="snapshot-scope"></p><p>갱신 <span id="snapshot-updated"></span></p><p id="snapshot-source"></p><p id="snapshot-basis"></p><p id="snapshot-exclusions"></p><p id="history-retention">최근 7일의 기록을 제공합니다.</p>
   <p><a id="json-download" href="data/mystery-rankings.json" download>JSON 받기</a> · <a id="csv-download" href="data/mystery-rankings.csv" download>CSV 받기</a></p>
 </details>
-<dialog id="outfit-dialog" aria-labelledby="outfit-title"><button id="outfit-close" class="btn subtle" type="button">닫기 ×</button><h2 id="outfit-title">캐릭터 코디</h2><div class="outfit-large"><img id="outfit-image" alt="" width="600" height="600"></div></dialog>
+<dialog id="outfit-dialog" aria-labelledby="outfit-title"><div class="profile-dialog-head"><div><p id="profile-rank" class="profile-kicker"></p><h2 id="outfit-title">캐릭터 상세</h2><p id="profile-subtitle"></p></div><button id="outfit-close" class="btn subtle" type="button" aria-label="캐릭터 상세 닫기" autofocus>닫기 ×</button></div><div class="profile-layout"><div class="profile-appearance"><div class="outfit-large"><img id="outfit-image" alt="" width="600" height="600"><span id="profile-image-missing" hidden>외형 이미지 미수집</span></div><p id="profile-date"></p><div class="profile-browse"><button id="profile-prev" class="btn subtle" type="button">← 이전</button><button id="profile-next" class="btn subtle" type="button">다음 →</button></div></div><div class="profile-information"><section class="profile-stats" aria-label="캐릭터 정보"><p id="profile-power-label"></p><strong id="profile-power"></strong><dl id="profile-facts"></dl><p id="profile-presets"></p></section><section class="profile-outfit" aria-labelledby="profile-outfit-title"><div class="profile-outfit-head"><h3 id="profile-outfit-title">코디 착용 정보</h3><span id="profile-outfit-preset"></span></div><p id="profile-detail-status" role="status" aria-live="polite"></p><ul id="profile-outfit-items"></ul></section></div></div></dialog>
 </div>
 <noscript><p class="notice">검색 조건 적용과 시상식 표시에는 JavaScript가 필요합니다. 위 공개 수집본 파일에서 원본 기록을 확인할 수 있습니다.</p></noscript>
 </main>
-<footer class="footer"><div><strong>MAPLETOOLS</strong><span>Game resources © NEXON · Data based on NEXON Open API</span></div><a href="index.html">메이플툴즈 홈으로 →</a></footer>
+<footer class="site-footer container"><a class="brand" href="index.html"><img class="brand-mark" src="assets/mapletools-mark.svg" width="38" height="38" alt="" aria-hidden="true"><span>Maple<span class="brand-light">Tools</span></span></a><p>Data based on NEXON Open API<br>캐릭터 이미지·데이터의 권리는 NEXON에 있습니다.</p><nav aria-label="하단 메뉴"><a href="updates.html">업데이트 기록</a><a href="privacy.html">개인정보 처리방침</a><a href="terms.html">이용 안내</a><a href="#filters">검색 조건 ↑</a></nav></footer>
 </body>
 </html>
