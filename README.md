@@ -50,3 +50,7 @@ GitHub Pages는 `main` 브랜치의 루트 디렉터리를 배포합니다. `CNA
 - `python -X utf8 tests/check_site.py`: 내부 링크·버전·공개 파일 해시·JavaScript 구문 검사
 
 자세한 검증 범위는 [QA_NOTES.md](QA_NOTES.md), 설치·이용 범위는 [이용 안내](terms.html)를 참고하세요.
+
+## 미스터리 파일 최초 공개판
+
+`mystery.html`에서 실제 PC 검색 결과 수집본의 레벨·직업·월드별 전투력 시상식을 제공합니다. 초기 공개 데이터는 미수집 상태입니다. [데이터 반영·검증·Cloudflare 확장 안내](docs/mystery-operations.md)를 따르세요.
