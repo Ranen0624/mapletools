@@ -1,16 +1,21 @@
-import {readFile,writeFile,mkdir,rename,readdir,stat} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {validDate} from '../mystery-core.js';
+import {retentionDays,cutoffDate,retentionPlan,assertSiteBudget,pruneHistory} from './mystery-retention.mjs';
 
 async function atomic(path,text) { await writeFile(path+'.tmp',text); await rename(path+'.tmp',path); }
-async function size(path) { let total=0; for(const e of await readdir(path,{withFileTypes:true})) total+=e.isDirectory()?await size(join(path,e.name)):(await stat(join(path,e.name))).size; return total; }
 
 // Store each real character once per date; queries refer to shared, compressed pools.
-// Old dates and revisions are retained. Only the catalog pointer changes on publication.
+// Keep dates within the configured calendar window; expired public files are pruned.
 export async function writeHistory(root,index,snapshots) {
   if(!validDate(index.data_date)) throw Error('기준일을 확인하세요.');
+  const catalogPath=join(root,'data','mystery-dates.json');
+  let catalog={schema_version:1,dates:[]};
+  try { catalog=JSON.parse(await readFile(catalogPath,'utf8')); } catch(e) { if(e.code!=='ENOENT') throw e; }
+  const latest=[index.data_date,...catalog.dates.map(d=>d.date)].sort().at(-1),days=await retentionDays(root);
+  if(index.data_date<cutoffDate(latest,days))throw Error('공개 보관 기간이 지난 기준일입니다. 내 CSV 기록 분석을 이용하세요.');
   const directory=join(root,'data','mystery-history',index.data_date);
   await mkdir(directory,{recursive:true});
   const records=[],ids=new Map(),queries=[];
@@ -38,13 +43,10 @@ export async function writeHistory(root,index,snapshots) {
   const hash=createHash('sha256').update(text).digest('hex');
   const file=`data/mystery-history/${index.data_date}/${hash}.json`;
   await writeFile(join(root,file),text);
-  // Fail before moving the public pointer; never silently remove history to make room.
-  if(await size(join(root,'data'))>800*1024*1024) throw Error('공개 기록이 800MB를 넘었습니다. 기존 기록을 보존하고 저장소 확장 후 공개하세요.');
-  const catalogPath=join(root,'data','mystery-dates.json');
-  let catalog={schema_version:1,dates:[]};
-  try { catalog=JSON.parse(await readFile(catalogPath,'utf8')); } catch(e) { if(e.code!=='ENOENT') throw e; }
+  await assertSiteBudget(root,await retentionPlan(root,latest,days));
   const dates=[...catalog.dates.filter(d=>d.date!==index.data_date),{date:index.data_date,index:file,verified:index.verified,updated_at:index.updated_at}].sort((a,b)=>b.date.localeCompare(a.date));
   if(dates[0].date===index.data_date) await atomic(join(root,'data','mystery-index.json'),text);
   await atomic(catalogPath,JSON.stringify({schema_version:1,latest:dates[0].date,dates},null,2)+'\n');
+  await pruneHistory(root);
   return packed;
 }
