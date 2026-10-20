@@ -13,8 +13,8 @@
 <meta property="og:description" content="레벨·직업·월드별 전투력 TOP 3. 실제 캐릭터 외형과 함께 확인하세요.">
 <meta property="og:url" content="https://mapletools.kr/mystery.html">
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="mystery.css?v=7">
-<script type="module" src="mystery.js?v=7"></script>
+<link rel="stylesheet" href="mystery.css?v=8">
+<script type="module" src="mystery.js?v=8"></script>
 </head>
 <body>
 <a class="skip" href="#filters">검색 조건으로 바로가기</a>
@@ -49,6 +49,7 @@
       <button type="button" class="btn subtle" id="public-reset" hidden>공개 기록 보기</button>
     </div>
   </form>
+  <p class="scope-note">290~300레벨 · 제논·데몬어벤져 제외</p>
   <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
   <div id="share-fallback" hidden><label for="share-url">공유 링크</label><input id="share-url" readonly></div>
 </section>
@@ -79,7 +80,7 @@
 </details>
 <details class="data-details">
   <summary>수집 정보 · 기록 다운로드</summary>
-  <p id="snapshot-scope"></p><p>갱신 <span id="snapshot-updated"></span></p><p id="snapshot-source"></p>
+  <p id="snapshot-scope"></p><p>갱신 <span id="snapshot-updated"></span></p><p id="snapshot-source"></p><p id="snapshot-basis"></p><p id="snapshot-exclusions"></p>
   <p><a id="json-download" href="data/mystery-rankings.json" download>JSON 받기</a> · <a id="csv-download" href="data/mystery-rankings.csv" download>CSV 받기</a></p>
 </details>
 <dialog id="outfit-dialog" aria-labelledby="outfit-title"><button id="outfit-close" class="btn subtle" type="button">닫기 ×</button><h2 id="outfit-title">캐릭터 코디</h2><div class="outfit-large"><img id="outfit-image" alt="" width="600" height="600"></div></dialog>

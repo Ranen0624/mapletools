@@ -60,6 +60,30 @@ test('mixed dates and conflicting OCID records are rejected before publishing',(
   assert.throws(()=>acc.add({...rows[1],observedAt:'2026-10-18'}),/같은 기준일/);
 });
 
+test('excluded jobs are removed before top-ten truncation and full population counting',()=>{
+  const acc=queryAccumulator(date),valid=Array.from({length:11},(_,n)=>({...rows[0],name:'포함검증'+n,ocid:'included'+n,combat:100+n}));
+  for(let n=0;n<20;n++) acc.add({...rows[0],name:'제외검증'+n,ocid:'excluded'+n,job:n%2?'제논':'데몬어벤져',combat:999999});
+  for(const row of valid) acc.add(row);
+  const q=acc.queries.get(JSON.stringify(['regular','','']));
+  assert.equal(acc.scopeExcluded,20);assert.equal(acc.total,valid.length);
+  assert.equal(q.counts.get(290),valid.length);assert.equal(q.levels.get(290).length,Math.min(10,valid.length));
+  assert.equal(acc.jobs.has('제논'),false);assert.equal(acc.jobs.has('데몬어벤져'),false);
+});
+
+test('extracted sources awaiting calculation stay outside public rows and prevent a complete claim',async()=>{
+  const evidence=fileURLToPath(new URL('./evidence/',import.meta.url));await mkdir(evidence,{recursive:true});
+  const root=await mkdtemp(join(evidence,'mystery-stages-'));
+  try {
+    await writeFile(join(root,'mystery-config.json'),'{"apiBase":""}');
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(input,JSON.stringify(rows[0])+'\n');
+    await writeFile(audit,JSON.stringify({data_date:date,candidates:3,counts:{verified:1,collected:1,unverified:1}}));
+    await assert.rejects(publishIndex({input,audit,root}),/중간 공개/);
+    const r=await publishIndex({input,audit,root,allowPartial:true});
+    assert.equal(r.verified,1);assert.equal(r.collection.calculating,1);assert.equal(r.collection.unverified,1);assert.equal(r.collection.state,'collecting');
+  } finally {assert.ok(root.startsWith(join(evidence,'mystery-stages-')));await rm(root,{recursive:true,force:true});}
+});
+
 test('daily archives retain earlier dates, default to latest, and never replace missing dates with another day',async()=>{
   const evidence=fileURLToPath(new URL('./evidence/',import.meta.url));await mkdir(evidence,{recursive:true});
   const root=await mkdtemp(join(evidence,'mystery-history-'));
