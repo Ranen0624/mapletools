@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0c1020">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://open.api.nexon.com; connect-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>미스터리 파일 · 레벨별 최강자 TOP 3 | 메이플툴즈</title>
 <meta name="description" content="메이플툴즈 미스터리 파일. 실제 수집된 캐릭터 가운데 레벨·직업·월드 조건에 맞는 전투력 TOP 3를 금·은·동 시상대에서 확인하세요.">
 <link rel="canonical" href="https://mapletools.kr/mystery.html">
@@ -12,8 +13,8 @@
 <meta property="og:description" content="레벨·직업·월드별 전투력 TOP 3. 실제 캐릭터 외형과 함께 확인하세요.">
 <meta property="og:url" content="https://mapletools.kr/mystery.html">
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="mystery.css?v=1">
-<script type="module" src="mystery.js?v=1"></script>
+<link rel="stylesheet" href="mystery.css?v=2">
+<script type="module" src="mystery.js?v=2"></script>
 </head>
 <body>
 <a class="skip" href="#filters">검색 조건으로 바로가기</a>
@@ -25,7 +26,7 @@
 <main>
 <section class="masthead">
   <div class="masthead-inner">
-    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MAPLETOOLS ORIGINAL · THE CHAMPIONS</p>
+    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MYSTERY FILE 01 · 최초 공개판</p>
     <h1>미스터리 <span>파일</span><small>레벨별 최강자 시상식</small></h1>
     <p class="lead">280~300레벨 · 직업 · 월드를 선택하세요.<br>수집된 실제 캐릭터 중 가장 높은 전투력을 기록한 세 명이 시상대에 오릅니다.</p>
     <div class="masthead-pills"><span>실제 캐릭터 데이터</span><span>금 · 은 · 동 TOP 3</span><span>조건별 순위</span></div>
@@ -44,10 +45,16 @@
     <div class="actions">
       <button type="submit" class="btn primary" id="search-btn">최강자 찾기 <span aria-hidden="true">↗</span></button>
       <button type="button" class="btn subtle" id="share-btn">조건 링크 복사 <span aria-hidden="true">↗</span></button>
-      <label class="btn upload" for="csv-input">기존 결과 CSV 분석 <span aria-hidden="true">↑</span><input id="csv-input" type="file" accept=".csv,text/csv" hidden></label>
-      <span class="action-note">CSV 분석은 브라우저 안에서만 처리됩니다.</span>
+      <button type="button" class="btn subtle" id="public-reset">공개 데이터로 돌아가기 ↻</button>
     </div>
   </form>
+  <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+  <div id="share-fallback" hidden><label for="share-url">공유 링크</label><input id="share-url" readonly></div>
+</section>
+<section class="collection-card" aria-labelledby="collection-title">
+  <div class="collection-heading"><h2 id="collection-title">이 파일의 수집 기록</h2><span class="mini-label">공식 전체 랭킹이 아닌 수집본 내 비교</span></div>
+  <dl class="snapshot-meta"><div><dt>수집 기준일</dt><dd id="snapshot-date">미수집</dd></div><div><dt>공개 갱신</dt><dd id="snapshot-updated">등록 전</dd></div><div><dt>수집 범위</dt><dd id="snapshot-scope">미수집</dd></div><div><dt>데이터 출처</dt><dd id="snapshot-source">PC 검색 결과 · NEXON Open API</dd></div></dl>
+  <p id="local-notice" class="local-notice" hidden>지금은 내 파일 미리보기입니다. 이 파일은 서버로 전송되지 않으며, 공유 링크를 열어도 다른 사람에게 보이지 않습니다.</p>
 </section>
 <section class="result-section" aria-labelledby="results-title">
   <div class="result-title">
@@ -65,15 +72,24 @@
     <div class="table-scroll"><table><thead><tr><th>순위</th><th>캐릭터</th><th>월드</th><th>직업</th><th>레벨</th><th>전투력</th></tr></thead><tbody id="rank-rows"><tr><td colspan="6" class="empty-table">검색 조건에 맞는 데이터가 아직 없습니다.</td></tr></tbody></table></div>
   </div>
 </section>
+<details class="import-card">
+  <summary>내 PC 검색 결과로 미리보기 <span>CSV / JSON · 기기 안에서만 처리</span></summary>
+  <p>프로그램에서 실제 검색한 결과를 선택하세요. 공개 사이트 등록은 운영자가 검증한 파일을 반영하는 별도 과정입니다.</p>
+  <form id="import-form"><div class="import-grid"><div class="field"><label for="csv-input">검색 결과 파일 (최대 5MB · 50,000행)</label><input id="csv-input" type="file" accept=".csv,.json,text/csv,application/json" required></div><div class="field"><label for="import-date">수집 기준일 <small>(파일에 날짜가 없을 때 필수)</small></label><input id="import-date" type="date"></div></div><button type="submit" class="btn primary">내 파일 미리보기 ↑</button></form>
+  <p>필수 열: 닉네임 · 월드 · 직업 · 레벨 · 전투력. 수집 기준일은 같은 날짜여야 합니다. 전투력은 1.8억 같은 축약 없이 정수로 저장해 주세요. 캐릭터 이미지 열이 있으면 넥슨 공식 외형만 표시합니다.</p>
+  <p><a href="data/mystery-template.csv" download>빈 CSV 양식 받기 ↓</a> · UTF-8 / CP949 CSV 지원</p>
+</details>
 <section class="notice" aria-labelledby="notice-title">
   <div class="notice-icon" aria-hidden="true">ⓘ</div>
   <div><h2 id="notice-title">순위 집계 기준</h2>
     <p>이 결과는 NEXON Open API를 통해 <strong>실제로 수집·저장한 캐릭터만</strong> 대상으로 합니다. 수집이 완료되지 않은 부문은 전체 서버 확정 1위가 아니며, 최종 전투력은 같은 기준일의 공개 수치를 비교해야 합니다.</p>
-    <p>공용 서버 연결 전에는 검색 결과 CSV를 직접 불러와 확인할 수 있습니다. 시상대 캐릭터 이미지는 공식 API가 제공한 외형 URL이 있을 때만 표시합니다. 가상 캐릭터나 임의의 전투력은 생성하지 않습니다.</p>
+    <p>시상대 캐릭터 이미지는 공식 API가 제공한 외형 URL이 있을 때만 표시합니다. 누락되거나 불러올 수 없는 이미지는 별도로 안내합니다. 가상 캐릭터나 임의의 전투력은 생성하지 않습니다.</p>
+    <p><a href="data/mystery-rankings.json" download>공개 수집본 JSON ↓</a> · <a href="data/mystery-rankings.csv" download>공개 수집본 CSV ↓</a> · <a href="https://openapi.nexon.com/" target="_blank" rel="noopener noreferrer">NEXON Open API ↗</a></p>
     <p class="copyright">Game resources © NEXON · NEXON Open API based · MapleTools</p>
   </div>
 </section>
 </div>
+<noscript><p class="notice">검색 조건 적용과 시상식 표시에는 JavaScript가 필요합니다. 위 공개 수집본 파일에서 원본 기록을 확인할 수 있습니다.</p></noscript>
 </main>
 <footer class="footer"><div><strong>MAPLETOOLS</strong><span>미스터리 파일 · 실제 데이터가 만드는 시상식</span></div><a href="index.html">메이플툴즈 홈으로 →</a></footer>
 </body>
