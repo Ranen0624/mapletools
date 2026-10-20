@@ -13,8 +13,8 @@
 <meta property="og:description" content="레벨·직업·월드별 전투력 TOP 3. 실제 캐릭터 외형과 함께 확인하세요.">
 <meta property="og:url" content="https://mapletools.kr/mystery.html">
 <link rel="icon" href="favicon.ico">
-<link rel="stylesheet" href="mystery.css?v=2">
-<script type="module" src="mystery.js?v=2"></script>
+<link rel="stylesheet" href="mystery.css?v=5">
+<script type="module" src="mystery.js?v=4"></script>
 </head>
 <body>
 <a class="skip" href="#filters">검색 조건으로 바로가기</a>
@@ -28,7 +28,7 @@
   <div class="masthead-inner">
     <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span> MYSTERY FILE 01 · 최초 공개판</p>
     <h1>미스터리 <span>파일</span><small>레벨별 최강자 시상식</small></h1>
-    <p class="lead">280~300레벨 · 직업 · 월드를 선택하세요.<br>수집된 실제 캐릭터 중 가장 높은 전투력을 기록한 세 명이 시상대에 오릅니다.</p>
+    <p class="lead">285~300레벨 · 직업 · 월드 분류를 선택하세요.<br>수집된 실제 캐릭터 중 가장 높은 전투력을 기록한 세 명이 시상대에 오릅니다.</p>
     <div class="masthead-pills"><span>실제 캐릭터 데이터</span><span>금 · 은 · 동 TOP 3</span><span>조건별 순위</span></div>
   </div>
 </section>
@@ -40,7 +40,8 @@
       <div class="field"><label for="min-level">최소 레벨</label><select id="min-level" name="min" required></select></div>
       <div class="field"><label for="max-level">최대 레벨</label><select id="max-level" name="max" required></select></div>
       <div class="field"><label for="job">직업 <small>(비우면 전체)</small></label><input id="job" name="job" type="search" list="mystery-job-list" placeholder="전체 직업" autocomplete="off" maxlength="50"><datalist id="mystery-job-list"></datalist></div>
-      <div class="field"><label for="world">월드</label><select id="world" name="world"><option value="">전체 월드</option><option>스카니아</option><option>베라</option><option>루나</option><option>제니스</option><option>크로아</option><option>유니온</option><option>엘리시움</option><option>이노시스</option><option>레드</option><option>오로라</option><option>아케인</option><option>노바</option><option>에오스</option><option>핼리오스</option></select></div>
+      <div class="field"><label for="world-group">월드 분류</label><select id="world-group" name="group"><option value="regular">일반 월드</option><option value="eos-helios">에오스·핼리오스</option><option value="other">기타·이벤트 월드</option></select></div>
+      <div class="field"><label for="world">월드</label><select id="world" name="world"><option value="">선택 분류 전체</option></select></div>
     </div>
     <div class="actions">
       <button type="submit" class="btn primary" id="search-btn">최강자 찾기 <span aria-hidden="true">↗</span></button>
@@ -48,6 +49,7 @@
       <button type="button" class="btn subtle" id="public-reset">공개 데이터로 돌아가기 ↻</button>
     </div>
   </form>
+  <p class="action-note">일반 월드와 에오스·핼리오스는 같은 시상식에 섞지 않고 분류별로 비교합니다.</p>
   <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
   <div id="share-fallback" hidden><label for="share-url">공유 링크</label><input id="share-url" readonly></div>
 </section>
@@ -84,7 +86,8 @@
   <div><h2 id="notice-title">순위 집계 기준</h2>
     <p>이 결과는 NEXON Open API를 통해 <strong>실제로 수집·저장한 캐릭터만</strong> 대상으로 합니다. 수집이 완료되지 않은 부문은 전체 서버 확정 1위가 아니며, 최종 전투력은 같은 기준일의 공개 수치를 비교해야 합니다.</p>
     <p>시상대 캐릭터 이미지는 공식 API가 제공한 외형 URL이 있을 때만 표시합니다. 누락되거나 불러올 수 없는 이미지는 별도로 안내합니다. 가상 캐릭터나 임의의 전투력은 생성하지 않습니다.</p>
-    <p><a href="data/mystery-rankings.json" download>공개 수집본 JSON ↓</a> · <a href="data/mystery-rankings.csv" download>공개 수집본 CSV ↓</a> · <a href="https://openapi.nexon.com/" target="_blank" rel="noopener noreferrer">NEXON Open API ↗</a></p>
+    <p><a id="json-download" href="data/mystery-rankings.json" download>선택 범위 공개 기록 JSON ↓</a> · <a id="csv-download" href="data/mystery-rankings.csv" download>선택 범위 공개 기록 CSV ↓</a> · <a href="https://openapi.nexon.com/" target="_blank" rel="noopener noreferrer">NEXON Open API ↗</a></p>
+    <p><a href="data/mystery-collection.json">후보 목록 수집 기준 확인 ↗</a></p>
     <p class="copyright">Game resources © NEXON · NEXON Open API based · MapleTools</p>
   </div>
 </section>
