@@ -6,15 +6,18 @@ import {createHash} from 'node:crypto';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeHistory} from './mystery-history.mjs';
-import {MIN_LEVEL,MAX_LEVEL,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES} from '../mystery-core.js';
+import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES} from '../mystery-core.js';
 
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
 export function queryAccumulator(date) {
-  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(); let inputRows=0;
+  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(); let inputRows=0,scopeExcluded=0;
   function add(raw) {
     inputRows++;
     const row=normalizeCharacter(raw);
     if(!row || row.observedAt!==date) throw Error('같은 기준일의 유효한 캐릭터 API 기록만 공개할 수 있습니다.');
+    if(jobExcluded(row.job)) {scopeExcluded++;return;}
+    bases.add(row.calculation?'preset':'equipped');
+    if(bases.size>1) throw Error('착용 전투력과 프리셋 계산값을 혼합할 수 없습니다.');
     const key=row.ocid||JSON.stringify([row.world,row.name]),serialized=createHash('sha256').update(JSON.stringify(row)).digest('hex');
     const nameKey=JSON.stringify([row.world,row.name]);
     if(names.has(nameKey)&&names.get(nameKey)!==key) throw Error('같은 기준일 캐릭터의 식별자가 충돌합니다.');
@@ -28,31 +31,35 @@ export function queryAccumulator(date) {
       const top=q.levels.get(row.level)||[]; top.push(row); top.sort(compare); top.length=Math.min(10,top.length); q.levels.set(row.level,top);
     }
   }
-  return {add,queries,jobs,worlds,get total(){return seen.size;},get inputRows(){return inputRows;}};
+  return {add,queries,jobs,worlds,bases,get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
 }
 
 export async function publishIndex({input,audit,root,allowPartial=false,archive=false}) {
   const config=JSON.parse(await readFile(join(root,'mystery-config.json'),'utf8'));
   if(config.apiBase) throw Error('Worker 연결을 사용 중입니다. 정적 목록 전환을 먼저 검토하세요.');
   const progress=JSON.parse(await readFile(audit,'utf8')),counts=progress.counts;
-  if(!counts || Object.entries(counts).some(([key,n])=>!['verified','pending','error','excluded','outside','skipped'].includes(key)||!Number.isSafeInteger(n)||n<0) || !Number.isSafeInteger(progress.candidates) || progress.candidates<1 || Object.values(counts).reduce((s,n)=>s+n,0)!==progress.candidates) throw Error('수집 진행 기록의 인원 수를 확인하세요.');
-  const incomplete=!!(counts.pending||counts.error);
+  if(!counts || Object.entries(counts).some(([key,n])=>!['verified','pending','error','excluded','outside','skipped','unverified','collected'].includes(key)||!Number.isSafeInteger(n)||n<0) || !Number.isSafeInteger(progress.candidates) || progress.candidates<1 || Object.values(counts).reduce((s,n)=>s+n,0)!==progress.candidates) throw Error('수집 진행 기록의 인원 수를 확인하세요.');
+  const incomplete=!!(counts.pending||counts.collected||counts.error||counts.unverified);
   if(incomplete&&!allowPartial) throw Error('전체 후보 API 검증과 오류 재확인이 끝난 작업만 공개할 수 있습니다. 중간 공개는 --allow-partial을 명시하세요.');
   const acc=queryAccumulator(progress.data_date);
   for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})) if(line.trim()) acc.add(JSON.parse(line));
   if(acc.inputRows!==counts.verified || !acc.total) throw Error('수집 완료 기록과 API 원본 행 수가 일치하지 않습니다.');
+  const preset=acc.bases.has('preset');
+  if(preset !== (progress.basis==='preset')) throw Error('수집 기록의 계산 기준이 원본과 다릅니다.');
   const data=join(root,'data'),cache=join(data,'mystery-cache'); await mkdir(cache,{recursive:true});
   const updatedAt=new Date().toISOString();
   const collection={state:incomplete?'collecting':'scanned',candidates:progress.candidates,
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
-    outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,
-    duplicate_verified_rows:acc.inputRows-acc.total,as_of:progress.captured_at||updatedAt};
-  const source='NEXON character/basic · character/stat API';
+    outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
+    duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt};
+  const source=preset?'NEXON Open API · 프리셋 조합 계산':'NEXON character/basic · character/stat API';
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
-    description:`${incomplete?'수집 진행 중인 중간 공개본입니다. ':''}후보 ${collection.candidates.toLocaleString('ko-KR')}명 중 ${collection.processed.toLocaleString('ko-KR')}명을 조회했고, API 기준 290~300레벨 ${acc.total.toLocaleString('ko-KR')}명을 비교합니다.`,
+    combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],
+    description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
     limitations:[...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
       '이름 목록 확보에 사용한 랭킹 순위·레벨로 전투력 시상 순위를 결정하지 않습니다.',
       'API로 확인 불가능한 캐릭터와 후보 목록 밖 캐릭터가 있어 공식 전체 순위를 보장하지 않습니다.',
+      ...(preset?['같은 수집일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 현재 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {
@@ -67,7 +74,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   entries.sort((a,b)=>JSON.stringify([a.group,a.world,a.job]).localeCompare(JSON.stringify([b.group,b.world,b.job])));
   for(const entry of entries) { snapshots.push(entry.snapshot); delete entry.snapshot; }
   const index={schema_version:1,type:'mystery-query-index',data_date:progress.data_date,updated_at:updatedAt,source,coverage,
-    candidates:progress.candidates,verified:acc.total,duplicate_verified_rows:acc.inputRows-acc.total,excluded:collection.outside+collection.unavailable,
+    candidates:progress.candidates,verified:acc.total,duplicate_verified_rows:collection.duplicate_verified_rows,excluded:collection.outside+collection.unavailable+acc.scopeExcluded,
     collection,
     jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),queries:entries};
   if(archive) await writeHistory(root,index,snapshots);
@@ -76,8 +83,9 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   let previous={}; try { previous=JSON.parse(await readFile(collectionPath,'utf8')); } catch(e) { if(e.code!=='ENOENT') throw e; }
   const groups=Object.fromEntries([...acc.queries.values()].filter(q=>!q.world&&!q.job).map(q=>[q.group,[...q.counts.values()].reduce((a,b)=>a+b,0)]));
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
-    value_basis:{name_world_job_level_image:'character/basic',combat:'character/stat final_stat[stat_name=전투력]'},
-    ranking_basis:'API combat_power descending; API basic level/job/world only',
+    value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination':'character/stat final_stat[stat_name=전투력]'},
+    ranking_basis:preset?'calculated preset combat_power descending; exact equipped baseline validation required':'API combat_power descending; API basic level/job/world only',
+    excluded_jobs:[...EXCLUDED_JOBS],
     candidate_discovery:'ranking/overall API for names only; includes level 289 as a date-boundary buffer',
     candidates:progress.candidates,candidate_groups:previous.candidate_groups||{},per_level_candidate_cap:null,
     display_level_min:MIN_LEVEL,display_level_max:MAX_LEVEL,published_characters:acc.total,api_verified_groups:groups,
