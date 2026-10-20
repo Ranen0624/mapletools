@@ -1,18 +1,19 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {queryAccumulator,publishIndex} from '../scripts/publish-mystery-index.mjs';
 import {filterRank,snapshotCSV} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
-const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:285+(i%16),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
+const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:290+(i%11),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
 
 test('TOP 10 per single level exactly preserves arbitrary interval TOP 10 and full population counts',()=>{
   const acc=queryAccumulator(date); rows.forEach(acc.add);
   assert.equal(acc.total,rows.length);
-  const intervals=[...Array.from({length:16},(_,i)=>[285+i,285+i]),[285,300],[285,299],[286,299],[287,293],[289,300]];
+  const intervals=[...Array.from({length:11},(_,i)=>[290+i,290+i]),[290,300],[290,299],[291,299],[292,296],[294,300]];
   for(const q of acc.queries.values()) for(const [min,max] of intervals) {
     const options={min,max,group:q.group,world:q.world,job:q.job};
     const full=filterRank(rows,options),small=filterRank([...q.levels.values()].flat(),options);
@@ -37,7 +38,7 @@ test('streamed publication rejects unfinished scans, serves exact selected scope
     await writeFile(audit,JSON.stringify({data_date:date,candidates:rows.length,counts:{verified:rows.length}}));
     const result=await publishIndex({input,audit,root}); assert.equal(result.verified,rows.length);
     const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
-    const options={min:287,max:299,group:'eos-helios',world:'에오스',job:'렌'};
+    const options={min:292,max:299,group:'eos-helios',world:'에오스',job:'렌'};
     const selected=await loadRankingSource({fetcher,base:new URL('https://example.test/'),options});
     assert.deepEqual(filterRank(selected.characters,options).slice(0,10),filterRank(rows,options).slice(0,10));
     assert.equal(await readFile(join(root,new URL(selected.downloadCSV).pathname.slice(1)),'utf8'),snapshotCSV(selected));
@@ -57,4 +58,40 @@ test('mixed dates and conflicting OCID records are rejected before publishing',(
   assert.throws(()=>acc.add({...rows[0],combat:999999}),/충돌/);
   assert.throws(()=>acc.add({...rows[0],ocid:'different-ocid'}),/충돌/);
   assert.throws(()=>acc.add({...rows[1],observedAt:'2026-10-18'}),/같은 기준일/);
+});
+
+test('daily archives retain earlier dates, default to latest, and never replace missing dates with another day',async()=>{
+  const evidence=fileURLToPath(new URL('./evidence/',import.meta.url));await mkdir(evidence,{recursive:true});
+  const root=await mkdtemp(join(evidence,'mystery-history-'));
+  try {
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),'{"apiBase":""}');
+    const publish=async(day,increment=0)=>{
+      await writeFile(input,rows.map(r=>JSON.stringify({...r,observedAt:day,combat:r.combat+increment})).join('\n'));
+      await writeFile(audit,JSON.stringify({data_date:day,candidates:rows.length,counts:{verified:rows.length}}));
+      await publishIndex({input,audit,root,archive:true});
+    };
+    await publish(date);
+    const original=JSON.parse(await readFile(join(root,'data/mystery-dates.json'),'utf8')).dates[0].index;
+    const originalBytes=await readFile(join(root,original),'utf8');
+    await publish('2026-10-20',10000);
+    const catalog=JSON.parse(await readFile(join(root,'data/mystery-dates.json'),'utf8'));
+    assert.deepEqual(catalog.dates.map(d=>d.date),['2026-10-20',date]);
+    assert.equal(await readFile(join(root,original),'utf8'),originalBytes);
+    const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
+    const load=options=>loadRankingSource({fetcher,base:new URL('https://archive.test/'),options});
+    const latest=await load({}),old=await load({date});
+    assert.equal(latest.coverage.data_date,'2026-10-20');assert.equal(old.coverage.data_date,date);
+    assert.deepEqual(filterRank(old.characters).slice(0,10),filterRank(rows).slice(0,10));
+    assert.equal(filterRank(latest.characters)[0].combat,filterRank(old.characters)[0].combat+10000);
+    const missing=await load({date:'2026-10-18'});
+    assert.equal(missing.characters.length,0);assert.equal(missing.uncollectedDate,true);assert.equal(missing.coverage.data_date,'2026-10-18');
+    // Backfilling an earlier day cannot roll back the current snapshot.
+    await publish('2026-10-18');
+    assert.equal(JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8')).data_date,'2026-10-20');
+    const current=JSON.parse(await readFile(join(root,catalog.dates[0].index),'utf8'));
+    current.queries[0].refs[0]=999999;
+    await writeFile(join(root,catalog.dates[0].index),JSON.stringify(current));
+    await assert.rejects(load({...current.queries[0]}),/참조/);
+  } finally { assert.ok(root.startsWith(join(evidence,'mystery-history-'))); await rm(root,{recursive:true,force:true}); }
 });

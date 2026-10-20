@@ -7,16 +7,16 @@ import {join} from 'node:path';
 import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 import {importFile} from '../scripts/import-mystery.mjs';
-const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:285+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
+const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:290+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
 test('empty feed never invents a winner',()=>{ const s=validateSnapshot(emptySnapshot()); assert.equal(filterRank(s.characters).length,0); assert.match(collectionStatus(s,{},0),/미수집/); });
 test('inclusive level boundaries, jobs/worlds, deterministic ties and top ten',()=>{
   const rows=Array.from({length:16},(_,i)=>row(i));
   assert.equal(filterRank(rows)[0].level,300);
-  assert.equal(filterRank(rows,{min:285,max:285}).length,1);
+  assert.equal(filterRank(rows,{min:290,max:290}).length,1);
   assert.equal(filterRank(rows,{job:'비숍'}).length,0);
   assert.equal(filterRank(rows,{world:'크로아'}).length,0);
   assert.equal(filterRank(rows).slice(3,10).length,7);
-  for(const options of [{min:284},{max:301},{min:290,max:285},{min:285.5}]) assert.throws(()=>filterRank(rows,options));
+  for(const options of [{min:289},{max:301},{min:299,max:290},{min:290.5}]) assert.throws(()=>filterRank(rows,options));
   const tied=[row(0,{name:'나',combat:100}),row(1,{name:'가',combat:100})];
   assert.equal(filterRank(tied)[0].name,'가');
 });
@@ -34,7 +34,7 @@ test('same-day conflicts and mixed dates fail closed; duplicates do not inflate 
   assert.throws(()=>prepareSnapshot([row()],{date:'2026-10-18'}),/기준일/);
 });
 test('CSV BOM, quotes, comma in job and exact power; no missing date guessing',()=>{
-  const csv='\uFEFF닉네임,월드,직업,레벨,전투력\r\n검증전용,루나,"아크메이지(불,독)",285,"123,456"\r\n';
+  const csv='\uFEFF닉네임,월드,직업,레벨,전투력\r\n검증전용,루나,"아크메이지(불,독)",290,"123,456"\r\n';
   assert.throws(()=>parseImport(csv),/기준일/);
   const s=parseImport(csv,{date:'2026-10-19'}); assert.equal(s.characters[0].combat,123456); assert.equal(s.characters[0].job,'아크메이지(불,독)');
   assert.throws(()=>parseImport(csv+'broken,line\n',{date:'2026-10-19'}),/열 개수/);
@@ -53,8 +53,8 @@ test('scope and exhaustive claims are explicit and bounded to selected scope',()
   assert.throws(()=>prepareSnapshot([row()],{coverage:{status:'complete'}}),/전체 대상 수/);
   assert.throws(()=>prepareSnapshot([row()],{coverage:{worlds:['크로아']}}),/범위 밖/);
   const s=prepareSnapshot([row()],{coverage:{status:'complete',jobs:['아델'],worlds:['루나'],expected_count:1}});
-  assert.match(collectionStatus(s,{min:285,max:300,job:'아델',world:'루나'},1),/수집 완료/);
-  assert.match(collectionStatus(s,{min:285,max:300,job:'',world:''},1),/일부 수집/);
+  assert.match(collectionStatus(s,{min:290,max:300,job:'아델',world:'루나'},1),/수집 완료/);
+  assert.match(collectionStatus(s,{min:290,max:300,job:'',world:''},1),/일부 수집/);
   assert.equal(validateSnapshot(s).characters.length,1);
 });
 test('CSV export prevents formula execution',()=>{ const s=prepareSnapshot([row(0,{name:'=CHECK_ONLY'})]); assert(snapshotCSV(s).includes("'=CHECK_ONLY")); });
@@ -67,7 +67,7 @@ test('regular, Eos/Helios and unknown event worlds never share a podium',()=>{
   assert.equal(worldGroup('헬리오스'),'eos-helios');
   assert.throws(()=>filterRank(rows,{group:'regular',world:'에오스'}),/일치하지/);
   assert.throws(()=>filterRank(rows,{group:'all'}),/분류/);
-  assert.throws(()=>prepareSnapshot([row(0,{level:284})]));
+  assert.throws(()=>prepareSnapshot([row(0,{level:289})]));
 });
 test('static and Worker sources share validation and never silently fall back on failure',async()=>{
   let urls=[]; const fetcher=async url=>{ urls.push(String(url)); return new Response(JSON.stringify(urls.length===1?{apiBase:''}:emptySnapshot())); };

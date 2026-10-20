@@ -1,6 +1,6 @@
 // Shared by the browser, publisher and future Worker. No sample ranking data.
 import {parseCSV} from './csv-statistics.js';
-export const MIN_LEVEL = 285;
+export const MIN_LEVEL = 290;
 export const MAX_LEVEL = 300;
 export const MAX_CSV_BYTES = 5 * 1024 * 1024;
 export const WORLD_GROUPS = {
@@ -84,7 +84,7 @@ export function filterRank(rows, options = {}) {
   const group = options.group || (world ? worldGroup(world) : 'regular');
   if (!Object.hasOwn(WORLD_GROUPS,group)) throw Error('월드 분류를 확인하세요.');
   if (world && worldGroup(world) !== group) throw Error('월드 분류와 선택한 월드가 일치하지 않습니다.');
-  if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('레벨은 285~300 사이에서 최소 ≤ 최대가 되도록 선택하세요.');
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('레벨은 290~300 사이에서 최소 ≤ 최대가 되도록 선택하세요.');
   const dates = new Set(rows.map(r => normalizeCharacter(r)?.observedAt).filter(Boolean));
   if (dates.size > 1) throw Error('서로 다른 기준일의 기록은 한 순위로 비교할 수 없습니다.');
   return uniqueCharacters(rows).filter(r => r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
@@ -100,7 +100,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   if (!Array.isArray(rawRows) || rawRows.length > 50000) throw Error('캐릭터 배열은 50,000행 이하여야 합니다.');
   const normalized = rawRows.map((row,i) => {
     const result = normalizeCharacter(row,date);
-    if (!result) throw Error(`${i+1}번째 데이터의 닉네임·월드·직업·285~300레벨·정수 전투력·기준일·공식 이미지 URL을 확인하세요.`);
+    if (!result) throw Error(`${i+1}번째 데이터의 닉네임·월드·직업·290~300레벨·정수 전투력·기준일·공식 이미지 URL을 확인하세요.`);
     return result;
   });
   const dates = [...new Set(normalized.map(r => r.observedAt))];
