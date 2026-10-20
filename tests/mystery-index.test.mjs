@@ -29,6 +29,11 @@ test('streamed publication rejects unfinished scans, serves exact selected scope
     await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:''}));
     await writeFile(audit,JSON.stringify({data_date:date,candidates:rows.length+1,counts:{verified:rows.length,pending:1}}));
     await assert.rejects(publishIndex({input,audit,root}),/전체 후보/);
+    const partial=await publishIndex({input,audit,root,allowPartial:true});
+    assert.equal(partial.collection.state,'collecting'); assert.equal(partial.collection.pending,1);
+    const partialIndex=JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8'));
+    assert.match(partialIndex.coverage.description,/중간 공개본/);
+    assert.match(partialIndex.coverage.limitations[0],/조회하지 않은 후보 1명/);
     await writeFile(audit,JSON.stringify({data_date:date,candidates:rows.length,counts:{verified:rows.length}}));
     const result=await publishIndex({input,audit,root}); assert.equal(result.verified,rows.length);
     const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
