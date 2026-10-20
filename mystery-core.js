@@ -1,8 +1,18 @@
 // Shared by the browser, publisher and future Worker. No sample ranking data.
 import {parseCSV} from './csv-statistics.js';
-export const MIN_LEVEL = 280;
+export const MIN_LEVEL = 285;
 export const MAX_LEVEL = 300;
 export const MAX_CSV_BYTES = 5 * 1024 * 1024;
+export const WORLD_GROUPS = {
+  regular: {label:'일반 월드',worlds:['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바']},
+  'eos-helios': {label:'에오스·핼리오스',worlds:['에오스','핼리오스']},
+  other: {label:'기타·이벤트 월드',worlds:[]},
+};
+export function worldGroup(world) {
+  if (WORLD_GROUPS.regular.worlds.includes(world)) return 'regular';
+  if (WORLD_GROUPS['eos-helios'].worlds.includes(world) || world === '헬리오스') return 'eos-helios';
+  return 'other';
+}
 const ALIASES = {
   name: ['character_name','name','nickname','닉네임','캐릭터명','이름','본캐 후보'],
   world: ['world_name','world','server','월드','서버'],
@@ -71,15 +81,18 @@ export function uniqueCharacters(rows) {
 export function filterRank(rows, options = {}) {
   const min = Number(options.min ?? MIN_LEVEL), max = Number(options.max ?? MAX_LEVEL);
   const job = String(options.job || '').trim(), world = String(options.world || '').trim();
-  if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('레벨은 280~300 사이에서 최소 ≤ 최대가 되도록 선택하세요.');
+  const group = options.group || (world ? worldGroup(world) : 'regular');
+  if (!Object.hasOwn(WORLD_GROUPS,group)) throw Error('월드 분류를 확인하세요.');
+  if (world && worldGroup(world) !== group) throw Error('월드 분류와 선택한 월드가 일치하지 않습니다.');
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min < MIN_LEVEL || max > MAX_LEVEL || min > max) throw Error('레벨은 285~300 사이에서 최소 ≤ 최대가 되도록 선택하세요.');
   const dates = new Set(rows.map(r => normalizeCharacter(r)?.observedAt).filter(Boolean));
   if (dates.size > 1) throw Error('서로 다른 기준일의 기록은 한 순위로 비교할 수 없습니다.');
-  return uniqueCharacters(rows).filter(r => r.level >= min && r.level <= max && (!job || r.job === job) && (!world || r.world === world))
+  return uniqueCharacters(rows).filter(r => r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
 export function emptySnapshot() {
   return {schema_version:1,updated_at:null,source:'PC 검색 결과 · NEXON Open API',coverage:{
-    status:'uncollected',data_date:null,level_min:280,level_max:300,jobs:[],worlds:[],
+    status:'uncollected',data_date:null,level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[],worlds:[],
     description:'최초 수집 파일 등록 전입니다.',limitations:['전체 캐릭터를 수집한 공식 랭킹이 아닙니다.'],
   },characters:[]};
 }
@@ -87,7 +100,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   if (!Array.isArray(rawRows) || rawRows.length > 50000) throw Error('캐릭터 배열은 50,000행 이하여야 합니다.');
   const normalized = rawRows.map((row,i) => {
     const result = normalizeCharacter(row,date);
-    if (!result) throw Error(`${i+1}번째 데이터의 닉네임·월드·직업·280~300레벨·정수 전투력·기준일·공식 이미지 URL을 확인하세요.`);
+    if (!result) throw Error(`${i+1}번째 데이터의 닉네임·월드·직업·285~300레벨·정수 전투력·기준일·공식 이미지 URL을 확인하세요.`);
     return result;
   });
   const dates = [...new Set(normalized.map(r => r.observedAt))];
@@ -142,8 +155,10 @@ export function snapshotCSV(snapshot) {
 export function collectionStatus(snapshot, options, count) {
   const c = snapshot.coverage;
   if (!count) return '선택 조건 미수집 · 확인된 캐릭터 없음';
+  const group = options.group || (options.world ? worldGroup(options.world) : 'regular');
+  const worlds = WORLD_GROUPS[group]?.worlds || [];
   const within = Number(options.min) >= c.level_min && Number(options.max) <= c.level_max &&
     (c.jobs.includes('*') || (!!options.job && c.jobs.includes(options.job))) &&
-    (c.worlds.includes('*') || (!!options.world && c.worlds.includes(options.world)));
+    (c.worlds.includes('*') || (options.world ? c.worlds.includes(options.world) : worlds.length > 0 && worlds.every(w => c.worlds.includes(w))));
   return c.status === 'complete' && within ? '기재한 범위 수집 완료 · 수집본 내 순위' : '일부 수집 · 수집본 내 순위';
 }
