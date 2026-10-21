@@ -1,0 +1,47 @@
+/* Feedback stays outside the text and official character artwork. */
+.shared-motion-toggle{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:6px 12px;border:1px solid #bba4fb55;border-radius:20px;background:transparent;color:#c8c2e2;font:inherit;font-size:11px;cursor:pointer;white-space:nowrap}
+.demo-sitebar{flex-wrap:wrap}.demo-sitebar .shared-motion-toggle{margin-left:auto}.site-footer .shared-motion-toggle{align-self:start;justify-self:start}
+.motion-enabled .feature-nav{position:relative;isolation:isolate}
+.feature-selection-marker{position:absolute;left:0;top:0;z-index:-1;border-radius:6px;background:#bba4fb18;border:1px solid #bba4fb35;pointer-events:none;transition:transform .22s ease,width .22s ease,height .22s ease}
+.motion-enabled .feature-nav:has(.feature-selection-marker) button[aria-selected=true]{background:transparent}
+.motion-enabled .ceremony-spot.is-awarded{animation:award-arrive .48s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--award-delay,0ms)}
+.motion-enabled .ceremony-spot.is-awarded::before{background-size:250% 100%;background-image:linear-gradient(115deg,var(--medal) 28%,#fff9dc 43%,var(--medal) 56%);animation:laurel-light .85s ease-out both;animation-delay:calc(var(--award-delay,0ms) + .25s)}
+.motion-enabled .ceremony-spot.gold.is-awarded::after{animation:medal-halo .9s ease-out .15s both}
+.motion-enabled .ceremony-spot:not(.uncollected):focus-within::before{filter:drop-shadow(0 0 5px var(--medal))}
+@media(hover:hover){.motion-enabled .ceremony-spot:not(.uncollected):hover::before{filter:drop-shadow(0 0 5px var(--medal))}}
+.result-section.is-loading .portrait{position:relative}
+.result-section.is-loading .portrait::after{content:'';position:absolute;width:44%;height:8px;border-radius:10px;background:linear-gradient(90deg,#ffffff0c,#bba4fb65,#ffffff0c);background-size:220% 100%;animation:loading-light 1.3s linear infinite}
+.result-section.is-loading .empty-table{height:60px;color:var(--muted)}
+.coordi-stage[aria-busy=true]{position:relative}
+.coordi-stage[aria-busy=true] small{color:#d9caff}
+.coordi-stage[aria-busy=true]::after{content:'';display:block;width:50px;height:3px;border-radius:6px;background:linear-gradient(90deg,#bba4fb22,#bba4fb,#bba4fb22);background-size:220% 100%;animation:loading-light 1.3s linear infinite;margin:8px auto}
+.coordi-stage.is-crossfading{position:relative}
+.coordi-stage.is-crossfading>.outfit-camera.is-departing{position:absolute!important;left:50%;transform:translateX(-50%);pointer-events:none}
+.union-row{transition:border-color .18s,background-color .18s}
+.union-row.is-filled{border-color:#a995e280;background-color:#bba4fb08}
+.csv-workspace{transition:box-shadow .2s,border-color .2s}
+.motion-enabled .csv-workspace.is-dragging{box-shadow:inset 0 0 0 2px #bba4fb90,0 0 22px #bba4fb1c}
+#data-playground[aria-busy=true] .csv-status::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#bba4fb;margin-right:8px;animation:status-light 1s ease-in-out infinite alternate}
+.motion-enabled .timeline li{animation:feedback-arrive .22s ease both}
+.motion-enabled .timeline li:nth-child(2){animation-delay:35ms}.motion-enabled .timeline li:nth-child(3){animation-delay:70ms}.motion-enabled .timeline li:nth-child(n+4){animation-delay:105ms}
+.download-card{transition:border-color .2s,box-shadow .2s}
+.download-card:focus-within{border-color:#bba4fb80;box-shadow:0 0 24px #bba4fb14}
+.download-card .button span{transition:transform .18s}
+@media(hover:hover){.download-card:hover{border-color:#bba4fb80;box-shadow:0 0 24px #bba4fb14}.motion-enabled .download-card .button:hover span{transform:translateY(3px)}}
+.faq summary::after{display:inline-block;transition:transform .18s}.motion-enabled .faq details[open] summary::after{transform:rotate(180deg)}
+@keyframes award-arrive{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+@keyframes laurel-light{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes medal-halo{0%,100%{box-shadow:0 0 0 #f6d58500}45%{box-shadow:0 0 22px #f6d58550}}
+@keyframes loading-light{to{background-position:-220% 0}}
+@keyframes status-light{from{opacity:.35}to{opacity:1}}
+@keyframes feedback-arrive{from{opacity:0;translate:0 4px}to{opacity:1;translate:0 0}}
+@media(max-width:760px){
+ .header-inner #main-nav{display:flex;visibility:hidden;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .16s,transform .16s,visibility 0s .16s}
+ .header-inner #main-nav.is-open{visibility:visible;opacity:1;transform:none;pointer-events:auto;transition-delay:0s}
+ .menu-toggle span{transition:transform .16s}.menu-toggle[aria-expanded=true] span:first-child{transform:translateY(3px) rotate(45deg)}.menu-toggle[aria-expanded=true] span:last-child{transform:translateY(-3px) rotate(-45deg)}
+ .motion-enabled .ceremony-spot.is-awarded{animation-duration:.28s;animation-delay:0s}
+ .feature-selection-marker{transition-duration:.16s}
+}
+.motion-paused *,.motion-paused *::before,.motion-paused *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+.motion-paused .feature-selection-marker{display:none}.motion-paused .reveal{opacity:1!important;transform:none!important}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
