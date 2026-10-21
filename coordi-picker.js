@@ -20,17 +20,25 @@ export async function stage(container,names,caption='선택한 코디 미리보�
  if(view.url===url&&!force)return;
  clearTimeout(view.timeout);
  if(view.pending){view.pending.onload=view.pending.onerror=null;view.pending.src='';view.pending=null;}
- view.url=url;
+ view.url=url;container.setAttribute('aria-busy',String(!!url));
  if(!url){view.image?.remove();view.image=null;view.state.textContent='코디를 고르면 미리 볼 수 있어요.';return;}
  view.state.textContent='착용 모습 준비 중… 이전 이미지가 있으면 잠시 유지합니다.';
  const img=new Image();view.pending=img;img.alt='선택한 코디의 참고용 착용 모습';
- img.onload=()=>{if(view.pending!==img)return;clearTimeout(view.timeout);view.frame?.remove();view.image?.remove();view.image=img;view.frame=OutfitUI.previewFrame(img,items,container.closest('#coordi-preview')?1.1:1.3);view.pending=null;container.insertBefore(view.frame,view.state);view.state.textContent='';};
- img.onerror=()=>{if(view.pending!==img)return;clearTimeout(view.timeout);view.pending=null;view.state.textContent='새 이미지를 불러오지 못했어요. 다시 보기를 눌러 주세요.';};view.timeout=setTimeout(()=>{if(view.pending!==img)return;img.onload=img.onerror=null;img.src='';view.pending=null;view.state.textContent='외부 미리보기 서버 응답이 늦어지고 있어요. 이름 검색은 계속 사용할 수 있어요.';},10000);img.src=url;
+ img.onload=()=>{if(view.pending!==img)return;clearTimeout(view.timeout);const previous=view.frame;
+  view.image=img;view.frame=OutfitUI.previewFrame(img,items,container.closest('#coordi-preview')?1.1:1.3);view.pending=null;
+  container.querySelectorAll('.is-departing').forEach(frame=>frame.remove());
+  if(previous&&window.MapleMotion?.enabled()){
+   const top=previous.offsetTop;container.classList.add('is-crossfading');previous.classList.add('is-departing');previous.style.top=top+'px';previous.setAttribute('aria-hidden','true');
+   container.insertBefore(view.frame,view.state);window.MapleMotion.fade(view.frame);
+   window.MapleMotion.animate(previous,[{opacity:1},{opacity:0}],{duration:200}).then(()=>{previous.remove();if(!container.querySelector('.is-departing'))container.classList.remove('is-crossfading');});
+  }else{previous?.remove();container.insertBefore(view.frame,view.state);window.MapleMotion?.fade(view.frame);}
+  container.setAttribute('aria-busy','false');view.state.textContent='';};
+ img.onerror=()=>{if(view.pending!==img)return;clearTimeout(view.timeout);view.pending=null;view.url=null;container.setAttribute('aria-busy','false');view.state.textContent='새 이미지를 불러오지 못했어요. 다시 보기를 눌러 주세요.';};view.timeout=setTimeout(()=>{if(view.pending!==img)return;img.onload=img.onerror=null;img.src='';view.pending=null;view.url=null;container.setAttribute('aria-busy','false');view.state.textContent='외부 미리보기 서버 응답이 늦어지고 있어요. 이름 검색은 계속 사용할 수 있어요.';},10000);img.src=url;
 }
 export function bindPicker(query){
  const results=document.getElementById('coordi-suggestions'),part=document.getElementById('coordi-part'),preview=document.getElementById('coordi-fitting'),selected=document.getElementById('coordi-selected'),related=document.getElementById('coordi-related');
  let timer,previewTimer;
- const append=name=>{try{const names=parseQuery(query.value);let index=names.length-1;const active=names[index];if(!active||(MapleAvatar.identify(active)&&!key(name).includes(key(active))))index=null;query.value=MapleAvatar.selectName(names,name,index).join(', ')+', ';query.focus();refresh(true);}catch(error){document.getElementById('coordi-resource-note').textContent=error.message;}};
+ const append=name=>{try{const names=parseQuery(query.value);let index=names.length-1;const active=names[index];if(!active||(MapleAvatar.identify(active)&&!key(name).includes(key(active))))index=null;query.value=MapleAvatar.selectName(names,name,index).join(', ')+', ';query.focus();refresh(true);window.MapleMotion?.pulse([...selected.children].find(row=>row.firstChild.textContent===name));}catch(error){document.getElementById('coordi-resource-note').textContent=error.message;}};
  const showSets=name=>OutfitUI.setPopup(name,document.activeElement,append);
  const refresh=(keep=false)=>{
   clearTimeout(timer);if(keep!==true)results.replaceChildren();const fragment=query.value.split(/[,;\n\r]/).at(-1).trim(),matches=suggestions(fragment,part.value);

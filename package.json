@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test": "node tests/demo-engine.test.mjs && node tests/dom.test.cjs && node tests/csv-statistics.test.mjs && node tests/data-mate.test.cjs && node tests/mate-rig.test.mjs && node tests/coordi.test.mjs && node tests/avatar.test.mjs && node --test tests/mystery.test.mjs tests/mystery-dom.test.mjs tests/mystery-worker.test.mjs tests/mystery-index.test.mjs tests/mystery-details.test.mjs tests/mystery-retention.test.mjs",
+    "test": "node tests/demo-engine.test.mjs && node tests/dom.test.cjs && node tests/csv-statistics.test.mjs && node tests/data-mate.test.cjs && node tests/mate-rig.test.mjs && node tests/coordi.test.mjs && node tests/avatar.test.mjs && node --test tests/mystery.test.mjs tests/mystery-dom.test.mjs tests/mystery-worker.test.mjs tests/mystery-index.test.mjs tests/mystery-details.test.mjs tests/mystery-retention.test.mjs tests/ui-motion.test.mjs",
     "check:links": "python tests/check_site.py",
     "check:mystery": "node scripts/check-mystery.mjs",
     "prune:mystery": "node scripts/mystery-retention.mjs"
