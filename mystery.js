@@ -67,7 +67,13 @@ function render() {
   const preset=c.combat_basis==='preset';
   $('snapshot-progress').textContent=snapshot.collection?`${preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':snapshot.collection.unverified?'일부 검증 보류':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'현재 착용 상태의 API 전투력으로 비교합니다.';
-  $('snapshot-exclusions').textContent=`제논·데몬어벤져 집계 제외${snapshot.collection?.unverified?` · 계산 검증 보류 ${snapshot.collection.unverified.toLocaleString('ko-KR')}명`:''}`;
+  const counts=snapshot.collection,collectionNotes=counts?[
+    `전체 대기 ${(counts.pending||0).toLocaleString('ko-KR')}명`,
+    ...(counts.calculating?[`계산 중 ${counts.calculating.toLocaleString('ko-KR')}명`]:[]),
+    ...(counts.unverified?[`계산 검증 보류 ${counts.unverified.toLocaleString('ko-KR')}명`]:[]),
+    ...(counts.failed?[`조회 오류 ${counts.failed.toLocaleString('ko-KR')}건`]:[])
+  ]:[];
+  $('snapshot-exclusions').textContent=['제논·데몬어벤져 집계 제외',...collectionNotes].join(' · ');
   updateDownloads();
   $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':local?`${c.data_date} 내 파일 기준 순위 · 홈페이지 공개 데이터와 별개입니다.`:failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'일부 수집 · 순위가 바뀔 수 있습니다. ':''}${preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
   const rows=ranked.slice(3,10).map((r,i)=>{ const row=el('tr'),name=el('td');name.append(nameButton(r));row.append(el('td','',String(i+4)),name);for(const v of [r.world,r.job,r.level])row.append(el('td','',String(v)));const combat=el('td','',r.combat.toLocaleString('ko-KR')); if(r.calculation) combat.append(el('small','preset-info',presetInfo(r))); row.append(combat);return row; });

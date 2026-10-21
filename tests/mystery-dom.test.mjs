@@ -83,10 +83,11 @@ test('a pending public query cannot display winners for changed conditions or re
 
 test('interim data shows actual population and unfinished collection above the podium',async()=>{
   const source={...core.prepareSnapshot([row(),row(1),row(2)]),
-    collection:{state:'collecting',verified:1000,candidates:10000,pending:8000},selectionCounts:{290:200,291:30,292:2}};
+    collection:{state:'collecting',verified:1000,candidates:10000,pending:8000,calculating:100,unverified:899,failed:1},selectionCounts:{290:200,291:30,292:2}};
   const dom=await setup(source),d=dom.window.document;
   assert.match(d.getElementById('data-status').textContent,/수집본 내 순위/);
   assert.match(d.getElementById('snapshot-progress').textContent,/수집 1,000명.*수집 중/);
+  assert.match(d.getElementById('snapshot-exclusions').textContent,/전체 대기 8,000명.*계산 중 100명.*검증 보류 899명.*조회 오류 1건/);
   assert.match(d.getElementById('result-subtitle').textContent,/확인된 232명/);
   assert.equal(d.querySelectorAll('.uncollected').length,0); dom.window.close();
 });
