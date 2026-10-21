@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-20",
+  "data_date": "2026-10-21",
   "publication_status": "interim",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
@@ -12,42 +12,42 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 198553,
+  "candidates": 199919,
   "candidate_groups": {
-    "regular": 694499,
-    "eos-helios": 47368
+    "regular": 187312,
+    "eos-helios": 12607
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 6406,
+  "published_characters": 43671,
   "api_verified_groups": {
-    "regular": 4462,
-    "eos-helios": 1944
+    "regular": 37668,
+    "eos-helios": 6003
   },
   "collection": {
     "state": "collecting",
-    "candidates": 198553,
-    "processed": 14748,
-    "pending": 183805,
-    "failed": 0,
+    "candidates": 199919,
+    "processed": 78356,
+    "pending": 121563,
+    "failed": 1,
     "skipped": 0,
-    "outside": 121,
-    "unavailable": 6161,
-    "verified": 6406,
-    "unverified": 1959,
-    "calculating": 101,
+    "outside": 1524,
+    "unavailable": 2341,
+    "verified": 43671,
+    "unverified": 30716,
+    "calculating": 103,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-20T07:48:29.535383+00:00"
+    "as_of": "2026-10-21T01:30:49.050242+00:00"
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 3473,
-      "last_level": 283,
-      "max_pages": 5000,
+      "last_page": 937,
+      "last_level": 288,
+      "max_pages": 1600,
       "initial_limit": 100,
       "auto_expanded": true,
       "limited": false
@@ -55,11 +55,11 @@
     {
       "world_type": 1,
       "world_name": "",
-      "last_page": 237,
-      "last_level": 283,
-      "max_pages": 400,
+      "last_page": 64,
+      "last_level": 288,
+      "max_pages": 100,
       "initial_limit": 100,
-      "auto_expanded": true,
+      "auto_expanded": false,
       "limited": false
     }
   ],
