@@ -34,11 +34,27 @@ export function queryAccumulator(date) {
   return {add,queries,jobs,worlds,bases,get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
 }
 
+export function discoveryMetadata(progress,previous={}) {
+  const fresh=Object.hasOwn(progress,'candidate_groups');
+  const same=previous.data_date===progress.data_date && previous.candidates===progress.candidates;
+  const groups=fresh?progress.candidate_groups:(same?previous.candidate_groups||{}:{});
+  const valid=!!groups && !Array.isArray(groups) && typeof groups==='object'
+    && Object.entries(groups).every(([key,n])=>['regular','eos-helios'].includes(key)&&Number.isSafeInteger(n)&&n>=0)
+    && (!Object.keys(groups).length || Object.values(groups).reduce((a,b)=>a+b,0)===progress.candidates);
+  if(fresh&&!valid) throw Error('후보 탐색 분류 인원과 전체 후보 수가 일치하지 않습니다.');
+  const coverage=progress.discovery_coverage ?? (same&&valid?previous.discovery_coverage:[]) ?? [];
+  if(!Array.isArray(coverage)) throw Error('후보 탐색 범위 기록을 확인하세요.');
+  return {candidate_groups:valid?groups:{},discovery_coverage:coverage};
+}
+
 export async function publishIndex({input,audit,root,allowPartial=false,archive=false}) {
   const config=JSON.parse(await readFile(join(root,'mystery-config.json'),'utf8'));
   if(config.apiBase) throw Error('Worker 연결을 사용 중입니다. 정적 목록 전환을 먼저 검토하세요.');
   const progress=JSON.parse(await readFile(audit,'utf8')),counts=progress.counts;
   if(!counts || Object.entries(counts).some(([key,n])=>!['verified','pending','error','excluded','outside','skipped','unverified','collected'].includes(key)||!Number.isSafeInteger(n)||n<0) || !Number.isSafeInteger(progress.candidates) || progress.candidates<1 || Object.values(counts).reduce((s,n)=>s+n,0)!==progress.candidates) throw Error('수집 진행 기록의 인원 수를 확인하세요.');
+  const collectionPath=join(root,'data/mystery-collection.json');
+  let previous={}; try { previous=JSON.parse(await readFile(collectionPath,'utf8')); } catch(e) { if(e.code!=='ENOENT') throw e; }
+  const discovery=discoveryMetadata(progress,previous);
   const incomplete=!!(counts.pending||counts.collected||counts.error||counts.unverified);
   if(incomplete&&!allowPartial) throw Error('전체 후보 API 검증과 오류 재확인이 끝난 작업만 공개할 수 있습니다. 중간 공개는 --allow-partial을 명시하세요.');
   const acc=queryAccumulator(progress.data_date);
@@ -79,17 +95,15 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),queries:entries};
   if(archive) await writeHistory(root,index,snapshots);
   else await writeFile(join(data,'mystery-index.json'),JSON.stringify(index,null,2)+'\n');
-  const collectionPath=join(data,'mystery-collection.json');
-  let previous={}; try { previous=JSON.parse(await readFile(collectionPath,'utf8')); } catch(e) { if(e.code!=='ENOENT') throw e; }
   const groups=Object.fromEntries([...acc.queries.values()].filter(q=>!q.world&&!q.job).map(q=>[q.group,[...q.counts.values()].reduce((a,b)=>a+b,0)]));
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
     value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination':'character/stat final_stat[stat_name=전투력]'},
     ranking_basis:preset?'calculated preset combat_power descending; exact equipped baseline validation required':'API combat_power descending; API basic level/job/world only',
     excluded_jobs:[...EXCLUDED_JOBS],
     candidate_discovery:'ranking/overall API for names only; includes level 289 as a date-boundary buffer',
-    candidates:progress.candidates,candidate_groups:previous.candidate_groups||{},per_level_candidate_cap:null,
+    candidates:progress.candidates,candidate_groups:discovery.candidate_groups,per_level_candidate_cap:null,
     display_level_min:MIN_LEVEL,display_level_max:MAX_LEVEL,published_characters:acc.total,api_verified_groups:groups,
-    collection,discovery_coverage:previous.discovery_coverage||[],
+    collection,discovery_coverage:discovery.discovery_coverage,
     notes:['Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
       'Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.',
       'Counts are a publication snapshot, not a live progress counter.']};

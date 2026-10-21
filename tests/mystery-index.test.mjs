@@ -4,7 +4,7 @@ import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {queryAccumulator,publishIndex} from '../scripts/publish-mystery-index.mjs';
+import {queryAccumulator,publishIndex,discoveryMetadata} from '../scripts/publish-mystery-index.mjs';
 import {filterRank,snapshotCSV} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
@@ -118,4 +118,16 @@ test('daily archives retain earlier dates, default to latest, and never replace 
     await writeFile(join(root,catalog.dates[0].index),JSON.stringify(current));
     await assert.rejects(load({...current.queries[0]}),/참조/);
   } finally { assert.ok(root.startsWith(join(evidence,'mystery-history-'))); await rm(root,{recursive:true,force:true}); }
+});
+
+
+test('daily discovery uses its own candidate groups and never carries another date or population',()=>{
+  const previous={data_date:'2026-10-19',candidates:640,candidate_groups:{regular:320,'eos-helios':320},discovery_coverage:[{world_type:0,last_page:4,limited:false}]};
+  assert.deepEqual(discoveryMetadata({data_date:'2026-10-20',candidates:640},previous),{candidate_groups:{},discovery_coverage:[]});
+  assert.deepEqual(discoveryMetadata({data_date:previous.data_date,candidates:641},previous),{candidate_groups:{},discovery_coverage:[]});
+  assert.deepEqual(discoveryMetadata({data_date:previous.data_date,candidates:640},previous),{candidate_groups:previous.candidate_groups,discovery_coverage:previous.discovery_coverage});
+  const fresh={data_date:'2026-10-20',candidates:700,candidate_groups:{regular:600,'eos-helios':100},discovery_coverage:[{world_type:0,last_page:7,limited:false}]};
+  assert.deepEqual(discoveryMetadata(fresh,previous),{candidate_groups:fresh.candidate_groups,discovery_coverage:fresh.discovery_coverage});
+  assert.throws(()=>discoveryMetadata({...fresh,candidate_groups:{regular:700,'eos-helios':100}},previous),/후보/);
+  assert.deepEqual(discoveryMetadata({data_date:previous.data_date,candidates:640},{...previous,candidate_groups:{regular:1}}),{candidate_groups:{},discovery_coverage:[]});
 });
