@@ -18,6 +18,19 @@ test('public empty page shows three uncollected places and no images or values',
   assert.equal(d.querySelectorAll('.uncollected').length,3); assert.equal(d.querySelectorAll('.portrait img').length,0);
   assert.match(d.getElementById('snapshot-date').textContent,/미수집/); assert.match(d.getElementById('data-status').textContent,/미수집/); dom.window.close();
 });
+
+test('loading a new date is explicitly pending until verified data arrives; no fake winners appear',async()=>{
+ let resolve;
+ const dom=await setup(()=>new Promise(r=>resolve=r)),d=dom.window.document;
+ assert.equal(d.getElementById('result-section').getAttribute('aria-busy'),'true');
+ assert.match(d.querySelector('#podium-1 .character-name').textContent,/기록 확인 중/);
+ assert.match(d.getElementById('rank-rows').textContent,/불러오는 중/);
+ assert.equal(d.querySelectorAll('.portrait img').length,0);
+ resolve(core.prepareSnapshot([row()]));await flush();
+ assert.equal(d.getElementById('result-section').getAttribute('aria-busy'),'false');
+ assert.match(d.getElementById('podium-1').textContent,/검증전용0/);
+ assert.equal(d.querySelectorAll('.uncollected').length,2);dom.window.close();
+});
 test('populated rendering, lower ranks, text safety and job/world filters',async()=>{
   const s=core.prepareSnapshot(Array.from({length:12},(_,i)=>row(i,{name:i===11?'<img src=x onerror=alert(1)>':'검증전용'+i})));
   const dom=await setup(s),w=dom.window,d=w.document;

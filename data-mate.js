@@ -34,7 +34,7 @@ async function loadFiles(files){
   const buffer=await file.arrayBuffer();if(current!==revision)return;
   worker=new Worker('csv-worker.js?v=data-mate-4',{type:'module'});
   worker.onmessage=({data})=>{if(current!==revision)return;worker?.terminate();worker=null;section.removeAttribute('aria-busy');if(data.error){status.textContent=data.error;return;}
-   result=data.result;get('csv-empty').hidden=true;render();status.textContent=`${file.name} · 집계 완료`;react(`${result.total.toLocaleString()}명의 캐릭터를 모았어! 아래에서 직업·월드·레벨별로 바꿔 봐.`);
+   result=data.result;get('csv-empty').hidden=true;render();status.textContent=`${file.name} · 집계 완료`;window.MapleMotion?.pulse(summary);react(`${result.total.toLocaleString()}명의 캐릭터를 모았어! 아래에서 직업·월드·레벨별로 바꿔 봐.`);
   };
   worker.onerror=()=>{if(current!==revision)return;stop();status.textContent='분석 도구를 불러오지 못했습니다. 새로고침 후 다시 선택하세요.';};
   worker.postMessage(buffer,[buffer]);

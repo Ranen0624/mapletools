@@ -13,7 +13,7 @@ function urlFor(o) { const u=new URL(location.href); u.search=''; for(const [k,v
 function addDataOptions() {
   const selected=$('data-date').value,dates=snapshot.availableDates||[];
   $('data-date').replaceChildren(new Option('최신 기록',''),...dates.map(d=>new Option(d,d)));
-  if(selected&&!dates.includes(selected)) $('data-date').add(new Option(selected+' · 미수집',selected));
+  if(selected&&!dates.includes(selected)) $('data-date').add(new Option(selected+(snapshot.uncollectedDate?' · 미수집':''),selected));
   $('data-date').value=selected;
 
   $('mystery-job-list').replaceChildren(...[...new Set([...jobs,...(snapshot.availableJobs||[]),...snapshot.characters.map(r=>r.job)])].filter(j=>!jobExcluded(j)).sort((a,b)=>a.localeCompare(b,'ko')).map(n=>new Option(n,n)));
@@ -50,10 +50,14 @@ function render() {
   const o=options(),excluded=jobExcluded(o.job); let ranked;
   try { ranked=excluded?[]:filterRank(snapshot.characters,o); } catch(e) { $('feedback').textContent=e.message; return false; }
   currentRanked=ranked.slice(0,10);
-  $('result-section')?.setAttribute('aria-busy',String(busy));
+  $('result-section')?.setAttribute('aria-busy',String(busy));$('result-section')?.classList.toggle('is-loading',busy);
   $('search-btn').disabled=busy;$('search-btn').textContent=busy?'불러오는 중…':'최강자 찾기 ↗';
   const count=excluded?0:snapshot.selectionCounts?Object.entries(snapshot.selectionCounts).filter(([lv])=>Number(lv)>=Number(o.min)&&Number(lv)<=Number(o.max)).reduce((sum,[,n])=>sum+n,0):ranked.length;
-  for(let i=1;i<=3;i++) podium(i,ranked[i-1]);
+  for(let i=1;i<=3;i++) {
+    podium(i,ranked[i-1]);const card=$('podium-'+i);card.classList.remove('is-awarded');
+    if(busy){card.querySelector('.image-missing').textContent='불러오는 중…';card.querySelector('.character-name').textContent='기록 확인 중';}
+    else if(ranked[i-1]){card.style.setProperty('--award-delay',(i===1?90:i===2?0:160)+'ms');void card.offsetWidth;card.classList.add('is-awarded');}
+  }
   $('result-subtitle').textContent=`${o.min===o.max?o.min:o.min+'~'+o.max}레벨 · ${o.job||'전체 직업'} · ${WORLD_GROUPS[o.group].label} / ${o.world||'분류 전체'} · 확인된 ${count.toLocaleString('ko-KR')}명`;
   $('data-status').textContent=busy?'불러오는 중':failure||`${local?'내 파일 · ':''}${ranked.length?'수집본 내 순위':'선택 조건 미수집'}`;
   $('data-status').dataset.state=failure?'error':ranked.length?'partial':'empty';
@@ -76,9 +80,10 @@ function render() {
   $('snapshot-exclusions').textContent=['제논·데몬어벤져 집계 제외',...collectionNotes].join(' · ');
   updateDownloads();
   $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':local?`${c.data_date} 내 파일 기준 순위 · 홈페이지 공개 데이터와 별개입니다.`:failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'일부 수집 · 순위가 바뀔 수 있습니다. ':''}${preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
+  if(busy){$('snapshot-date').textContent=o.date||'최신 기록 확인 중';$('snapshot-progress').textContent='수집 기록 확인 중…';$('result-subtitle').textContent='조건에 맞는 기록을 확인하고 있습니다.';$('coverage-note').textContent='순위 기록을 불러오는 중입니다…';}
   const rows=ranked.slice(3,10).map((r,i)=>{ const row=el('tr'),name=el('td');name.append(nameButton(r));row.append(el('td','',String(i+4)),name);for(const v of [r.world,r.job,r.level])row.append(el('td','',String(v)));const combat=el('td','',r.combat.toLocaleString('ko-KR')); if(r.calculation) combat.append(el('small','preset-info',presetInfo(r))); row.append(combat);return row; });
-  if(!rows.length) { const row=el('tr'),cell=el('td','empty-table','4~10위에 표시할 수집 기록이 없습니다.'); cell.colSpan=6; row.append(cell); rows.push(row); }
-  $('rank-rows').replaceChildren(...rows); $('local-notice').hidden=!local; $('public-reset').hidden=!local;
+  if(!rows.length) { const row=el('tr'),cell=el('td','empty-table',busy?'순위 기록을 불러오는 중입니다…':'4~10위에 표시할 수집 기록이 없습니다.'); cell.colSpan=6; row.append(cell); rows.push(row); }
+  $('rank-rows').replaceChildren(...rows);if(!busy)rows.forEach((row,i)=>window.MapleMotion?.animate(row,[{opacity:.25},{opacity:1}],{duration:180,delay:i*22})); $('local-notice').hidden=!local; $('public-reset').hidden=!local;
   $('local-analysis').hidden=!local;
   if(local){
     const values=ranked.map(r=>r.combat),n=values.length;
@@ -166,7 +171,7 @@ function showOutfit(character,trigger) {
   $('profile-rank').textContent=`${local?'내 파일':'현재 조건'} ${profileIndex+1}위`;
   $('outfit-title').textContent=character.name;$('profile-subtitle').textContent=`Lv.${character.level} · ${character.job} · ${character.world}`;
   image.hidden=!character.image;$('profile-image-missing').hidden=!!character.image;$('profile-image-missing').textContent='외형 이미지 미수집';
-  if(character.image){image.src=character.image;image.alt=character.name+' 수집 당시 실제 캐릭터 코디';}else image.removeAttribute('src');
+  if(character.image){image.onload=()=>window.MapleMotion?.fade(image);image.src=character.image;image.alt=character.name+' 수집 당시 실제 캐릭터 코디';if(image.complete&&image.naturalWidth)window.MapleMotion?.fade(image);}else image.removeAttribute('src');
   $('profile-date').textContent=`${character.observedAt} 수집 코디`;
   $('profile-power-label').textContent=character.calculation?'프리셋 계산 전투력':'API 착용 전투력';
   $('profile-power').textContent=character.combat.toLocaleString('ko-KR');
@@ -176,6 +181,7 @@ function showOutfit(character,trigger) {
   $('profile-prev').disabled=profileIndex<=0;$('profile-next').disabled=profileIndex<0||profileIndex>=currentRanked.length-1;
   $('profile-outfit-preset').textContent='';$('profile-outfit-items').replaceChildren();
   $('profile-detail-status').textContent=local?'내 파일에 코디 착용 정보가 포함되어 있지 않습니다.':'코디 착용 정보 불러오는 중…';
+  if(dialog.open)window.MapleMotion?.fade($('profile-facts'));
   if(!dialog.open){dialog.showModal();document.body.classList.add('profile-open');}
   if(!local)fillDetail(character,version);
 }
@@ -205,9 +211,9 @@ function presetInfo(character) {
   const p=character.calculation.presets;
   return `장비 ${p.equipment} · 하이퍼 ${p.hyper} · 어빌 ${p.ability} · 유니온 ${p.union}`;
 }
-$('outfit-close').addEventListener('click',()=>$('outfit-dialog').close());
+$('outfit-close').addEventListener('click',()=>window.MapleMotion?window.MapleMotion.closeDialog($('outfit-dialog')):$('outfit-dialog').close());
 $('profile-prev').addEventListener('click',()=>{if(profileIndex>0)showOutfit(currentRanked[profileIndex-1]);});
 $('profile-next').addEventListener('click',()=>{if(profileIndex<currentRanked.length-1)showOutfit(currentRanked[profileIndex+1]);});
 $('outfit-image').addEventListener('error',()=>{$('outfit-image').hidden=true;$('profile-image-missing').hidden=false;$('profile-image-missing').textContent='이미지를 불러오지 못했습니다.';});
 $('outfit-dialog').addEventListener('close',()=>{++detailVersion;document.body.classList.remove('profile-open');profileTrigger?.focus();});
-$('outfit-dialog').addEventListener('click',e=>{if(e.target!==$('outfit-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();});
+$('outfit-dialog').addEventListener('click',e=>{if(e.target!==$('outfit-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)window.MapleMotion?window.MapleMotion.closeDialog(e.target):e.target.close();});
