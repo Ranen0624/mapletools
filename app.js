@@ -115,20 +115,29 @@ const features={
  ]
 };
 const tabs=[...document.querySelectorAll('[data-feature]')],panel=document.getElementById('feature-panel');
-function selectFeature(button){const key=button.dataset.feature,d=features[key];if(!d)return;tabs.forEach(tab=>{tab.setAttribute('aria-selected',String(tab===button));tab.tabIndex=tab===button?0:-1;});panel.setAttribute('aria-labelledby',button.id);panel.innerHTML=`<p class="eyebrow">${d[0]}</p><h3>${d[1]}</h3><p>${d[2]}</p><div class="feature-facts">${d[3].map(([label,text])=>`<div><span>${label}</span><p>${text}</p></div>`).join('')}</div><a class="text-link" href="${key==='coordi'?'coordi.html?v=release-203':'demo.html?v=ui-2267-1&app='+d[4]}">${d[5]} <span aria-hidden="true">→</span></a>`;}
+let featureMarker;
+function moveFeatureMarker(){
+ const selected=tabs.find(t=>t.getAttribute('aria-selected')==='true');if(!selected)return;
+ const host=selected.parentElement;
+ if(!featureMarker){featureMarker=document.createElement('span');featureMarker.className='feature-selection-marker';featureMarker.setAttribute('aria-hidden','true');host.append(featureMarker);}
+ const r=selected.getBoundingClientRect(),h=host.getBoundingClientRect();
+ Object.assign(featureMarker.style,{width:r.width+'px',height:r.height+'px',transform:`translate(${r.left-h.left+host.scrollLeft}px,${r.top-h.top+host.scrollTop}px)`});
+}
+window.addEventListener('resize',moveFeatureMarker,{passive:true});moveFeatureMarker();
+function selectFeature(button){const key=button.dataset.feature,d=features[key];if(!d)return;tabs.forEach(tab=>{tab.setAttribute('aria-selected',String(tab===button));tab.tabIndex=tab===button?0:-1;});panel.style.minHeight=Math.max(panel.getBoundingClientRect().height,panel.scrollHeight)+'px';panel.setAttribute('aria-labelledby',button.id);panel.innerHTML=`<p class="eyebrow">${d[0]}</p><h3>${d[1]}</h3><p>${d[2]}</p><div class="feature-facts">${d[3].map(([label,text])=>`<div><span>${label}</span><p>${text}</p></div>`).join('')}</div><a class="text-link" href="${key==='coordi'?'coordi.html?v=release-203':'demo.html?v=ui-2267-1&app='+d[4]}">${d[5]} <span aria-hidden="true">→</span></a>`;moveFeatureMarker();window.MapleMotion?.enter(panel);}
 tabs.forEach((button,index)=>{button.addEventListener('click',()=>selectFeature(button));button.addEventListener('keydown',event=>{let i=index;if(event.key==='ArrowDown'||event.key==='ArrowRight')i=(index+1)%tabs.length;else if(event.key==='ArrowUp'||event.key==='ArrowLeft')i=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')i=0;else if(event.key==='End')i=tabs.length-1;else return;event.preventDefault();tabs[i].focus();selectFeature(tabs[i]);});});
 
 // Bounded motion: CSS handles float/twinkle; JS only interpolates the active pointer.
 const scene=document.querySelector('[data-motion-scene]'),motionToggle=document.getElementById('motion-toggle');
 if(scene&&motionToggle){
  const preference=typeof window.matchMedia==='function'?window.matchMedia('(prefers-reduced-motion: reduce)'):{matches:false};
- let manualPause=false,inView=true,frame=0,bounds=null,x=0,y=0,targetX=0,targetY=0;
+ let manualPause=window.MapleMotion?.paused()||false,inView=true,frame=0,bounds=null,x=0,y=0,targetX=0,targetY=0;
  const active=()=>!manualPause&&!preference.matches&&!document.hidden&&inView;
  const cancel=()=>{if(frame){cancelAnimationFrame(frame);frame=0;}};
  function paint(){frame=0;if(!active())return;x+=(targetX-x)*.085;y+=(targetY-y)*.085;scene.style.setProperty('--pointer-x',x.toFixed(4));scene.style.setProperty('--pointer-y',y.toFixed(4));if(Math.abs(targetX-x)+Math.abs(targetY-y)>.002)frame=requestAnimationFrame(paint);}
  function queue(){if(active()&&!frame)frame=requestAnimationFrame(paint);}
  function sync(){const enabled=!manualPause&&!preference.matches;document.documentElement.classList.toggle('motion-enabled',enabled);document.documentElement.classList.toggle('motion-paused',!enabled);document.documentElement.classList.toggle('has-reveals',enabled&&'IntersectionObserver' in window);scene.dataset.motion=active()?'on':'paused';motionToggle.disabled=Boolean(preference.matches);motionToggle.setAttribute('aria-pressed',String(!enabled));motionToggle.innerHTML=preference.matches?'동작 줄임 사용 중':enabled?'모션 끄기 <span aria-hidden="true">✧</span>':'모션 켜기 <span aria-hidden="true">✧</span>';if(!active()){cancel();scene.style.setProperty('--pointer-x','0');scene.style.setProperty('--pointer-y','0');x=y=0;}else queue();}
- motionToggle.addEventListener('click',()=>{manualPause=!manualPause;sync();});
+ if(window.MapleMotion)window.addEventListener('maple-motion-change',()=>{manualPause=window.MapleMotion.paused();sync();});else motionToggle.addEventListener('click',()=>{manualPause=!manualPause;sync();});
  scene.addEventListener('pointerenter',()=>{bounds=scene.getBoundingClientRect();});
  scene.addEventListener('pointermove',event=>{if(event.pointerType==='touch'||!active())return;bounds??=scene.getBoundingClientRect();if(!bounds.width||!bounds.height)return;targetX=Math.max(-1,Math.min(1,(event.clientX-bounds.left)/bounds.width*2-1));targetY=Math.max(-1,Math.min(1,(event.clientY-bounds.top)/bounds.height*2-1));queue();},{passive:true});
  scene.addEventListener('pointerleave',()=>{targetX=targetY=0;bounds=null;queue();});
