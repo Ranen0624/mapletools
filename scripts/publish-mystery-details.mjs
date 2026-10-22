@@ -32,9 +32,14 @@ export async function publishDetails({input,root,date}) {
   await flush();
   const text=JSON.stringify({schema_version:1,date,records,pools})+'\n';
   if(Buffer.byteLength(text)>MAX_CSV_BYTES)throw Error('상세 정보 목록이 너무 큽니다.');
-  await assertSiteBudget(root,await retentionPlan(root,catalog.latest,await retentionDays(root)));
   // Keep old immutable files; move only this date's public pointer last.
-  const path=join(directory,'index.json');await writeFile(path+'.tmp',text);await rename(path+'.tmp',path);
+  const path=join(directory,'index.json');
+  try{
+    const previous=await readFile(path,'utf8');
+    if(previous!==text){const revisions=join(directory,'revisions');await mkdir(revisions,{recursive:true});await writeFile(join(revisions,createHash('sha256').update(previous).digest('hex')+'.json'),previous);}
+  }catch(e){if(e.code!=='ENOENT')throw e;}
+  await assertSiteBudget(root,await retentionPlan(root,catalog.latest,await retentionDays(root)));
+  await writeFile(path+'.tmp',text);await rename(path+'.tmp',path);
   return {date,characters:total,pools:pools.length};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
