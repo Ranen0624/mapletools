@@ -4,3 +4,6 @@ data/mystery-cache/*.csv -text
 data/mystery-cache/*.json text eol=lf
 
 data/mystery-history/**/*.json text eol=lf
+
+# Content-addressed detail envelopes must retain their SHA-256 bytes on Windows.
+data/mystery-details/**/*.json text eol=lf
