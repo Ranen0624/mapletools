@@ -1,5 +1,5 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate} from './mystery-core.js?v=9';
-import {loadRankingSource} from './mystery-source.js?v=9';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate} from './mystery-core.js?v=daily-1';
+import {loadRankingSource} from './mystery-source.js?v=daily-1';
 import {loadCharacterDetail} from './mystery-details.js?v=9';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
@@ -12,7 +12,7 @@ function options() { return {min:$('min-level').value,max:$('max-level').value,j
 function urlFor(o) { const u=new URL(location.href); u.search=''; for(const [k,v] of Object.entries(o)) if(v) u.searchParams.set(k,v); return u; }
 function addDataOptions() {
   const selected=$('data-date').value,dates=snapshot.availableDates||[];
-  $('data-date').replaceChildren(new Option('최신 기록',''),...dates.map(d=>new Option(d,d)));
+  $('data-date').replaceChildren(new Option(snapshot.preferredApiMode==='dated'?'최신 일일 기록':'최신 기록',''),...dates.map(d=>new Option(d+(snapshot.availableDateModes?.[d]==='dated'?' · 일일 기록':snapshot.availableDateModes?.[d]?' · 이전 수집본':''),d)));
   if(selected&&!dates.includes(selected)) $('data-date').add(new Option(selected+(snapshot.uncollectedDate?' · 미수집':''),selected));
   $('data-date').value=selected;
 
@@ -63,14 +63,14 @@ function render() {
   $('data-status').dataset.state=failure?'error':ranked.length?'partial':'empty';
   $('share-btn').hidden=local;
   const c=snapshot.coverage,span=values=>values.includes('*')?'전체':values.join(', ')||'미수집';
-  $('snapshot-date').textContent=c.data_date||'미수집';
+  $('snapshot-date').textContent=(c.data_date||'미수집')+(c.api_mode==='dated'?' · API 일일 기록':'');
   $('snapshot-updated').textContent=snapshot.updated_at?new Date(snapshot.updated_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',hour12:false})+' (한국시간)':local?'내 파일 미리보기':'등록 전';
   $('snapshot-scope').textContent=`${c.level_min}~${c.level_max}레벨 · ${c.worlds.length}개 월드 · ${c.jobs.length}개 직업`;
   $('snapshot-source').textContent=snapshot.source;
   $('history-retention').textContent=local?'내 파일은 공개 기록의 보관 기간과 관계없이 분석할 수 있습니다.':`최근 ${snapshot.historyRetentionDays||7}일의 기록을 제공합니다. 오래된 기록은 내 CSV 기록 분석을 이용하세요.`;
   const preset=c.combat_basis==='preset';
   $('snapshot-progress').textContent=snapshot.collection?`${preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':snapshot.collection.unverified?'일부 검증 보류':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
-  $('snapshot-basis').textContent=preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'현재 착용 상태의 API 전투력으로 비교합니다.';
+  $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.');
   const counts=snapshot.collection,collectionNotes=counts?[
     `전체 대기 ${(counts.pending||0).toLocaleString('ko-KR')}명`,
     ...(counts.calculating?[`계산 중 ${counts.calculating.toLocaleString('ko-KR')}명`]:[]),

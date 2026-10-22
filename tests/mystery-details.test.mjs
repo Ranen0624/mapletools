@@ -4,6 +4,7 @@ import {readFile,writeFile,mkdir,mkdtemp,rm} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
 import {gzipSync} from 'node:zlib';
+import {createHash} from 'node:crypto';
 import {normalizeDetail,imageFingerprint,loadCharacterDetail,decodeDetailPool} from '../mystery-details.js';
 import {publishDetails} from '../scripts/publish-mystery-details.mjs';
 import {parseLocalImport,parseImport} from '../mystery-core.js';
@@ -36,6 +37,11 @@ test('compressed public details are lazy, cached and matched against name, world
     await assert.rejects(loadCharacterDetail(character,{...opts,fetcher:badFetcher}),/주소/);
     const missing=async()=>({ok:false,status:404});assert.equal(await loadCharacterDetail(character,{...opts,fetcher:missing}),null);
     await assert.rejects(publishDetails({input,root,date:'2026-09-01'}),/보관 범위/);
+    const indexPath=join(root,'data/mystery-details',date,'index.json'),previous=await readFile(indexPath,'utf8');
+    await writeFile(input,JSON.stringify({...detail,guild:'수정 검증'})+'\n');await publishDetails({input,root,date});
+    const revision=join(root,'data/mystery-details',date,'revisions',createHash('sha256').update(previous).digest('hex')+'.json');
+    assert.equal(await readFile(revision,'utf8'),previous);
+    assert.deepEqual(JSON.parse(await readFile(join(root,index.pools[0].file),'utf8')),pool);
   }finally{assert.ok(root.startsWith(join(evidence,'details-')));await rm(root,{recursive:true,force:true});}
 });
 

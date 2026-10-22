@@ -68,14 +68,15 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
     outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
     duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt};
-  const source=preset?'NEXON Open API · 프리셋 조합 계산':'NEXON character/basic · character/stat API';
+  const source=preset?`NEXON Open API · ${progress.api_mode==='dated'?'API 일일 기록 · ':''}프리셋 조합 계산`:'NEXON character/basic · character/stat API';
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
-    combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],
+    combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
     limitations:[...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
       '이름 목록 확보에 사용한 랭킹 순위·레벨로 전투력 시상 순위를 결정하지 않습니다.',
       'API로 확인 불가능한 캐릭터와 후보 목록 밖 캐릭터가 있어 공식 전체 순위를 보장하지 않습니다.',
-      ...(preset?['같은 수집일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 현재 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
+      ...(progress.api_mode==='dated'?['표시된 날짜의 API 일일 기록입니다. API는 분 단위 시점을 지정하지 않으며 정확한 23:59 스냅샷을 의미하지 않습니다.']:[]),
+      ...(preset?['같은 기준일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {
@@ -97,6 +98,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   else await writeFile(join(data,'mystery-index.json'),JSON.stringify(index,null,2)+'\n');
   const groups=Object.fromEntries([...acc.queries.values()].filter(q=>!q.world&&!q.job).map(q=>[q.group,[...q.counts.values()].reduce((a,b)=>a+b,0)]));
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
+    ...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination':'character/stat final_stat[stat_name=전투력]'},
     ranking_basis:preset?'calculated preset combat_power descending; exact equipped baseline validation required':'API combat_power descending; API basic level/job/world only',
     excluded_jobs:[...EXCLUDED_JOBS],
@@ -104,10 +106,11 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     candidates:progress.candidates,candidate_groups:discovery.candidate_groups,per_level_candidate_cap:null,
     display_level_min:MIN_LEVEL,display_level_max:MAX_LEVEL,published_characters:acc.total,api_verified_groups:groups,
     collection,discovery_coverage:discovery.discovery_coverage,
-    notes:['Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
+    notes:[...(progress.api_mode==='dated'?['All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.']:[]),'Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
       'Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.',
       'Counts are a publication snapshot, not a live progress counter.']};
-  const latestDate=archive?JSON.parse(await readFile(join(data,'mystery-dates.json'),'utf8')).latest:progress.data_date;
+  const catalog=archive?JSON.parse(await readFile(join(data,'mystery-dates.json'),'utf8')):null;
+  const latestDate=catalog?(config.preferredApiMode==='dated'?catalog.latest_dated:catalog.latest):progress.data_date;
   if(latestDate===progress.data_date) await writeFile(collectionPath,JSON.stringify(report,null,2)+'\n');
   // This is an operator preparation step. Commit and deploy only after checks and review.
   await writeFile(join(root,'mystery-config.json'),JSON.stringify({...config,staticIndex:'data/mystery-index.json',...(archive?{staticCatalog:'data/mystery-dates.json'}:{})},null,2)+'\n');
