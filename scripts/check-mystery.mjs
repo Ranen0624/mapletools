@@ -62,7 +62,7 @@ if(config.staticIndex) {
   }
   for(const q of index.queries) {
     const data=await loadRankingSource({base:new URL('https://mystery.test/'),fetcher,options:{...q,...(config.staticCatalog?{date:day.date}:{})}});
-    const {availableDates,historyRetentionDays,availableJobs,availableWorlds,selectionCounts,downloadJSON,downloadCSV,collection,...canonical}=data;
+    const {availableDates,availableDateModes,preferredApiMode,historyRetentionDays,availableJobs,availableWorlds,selectionCounts,downloadJSON,downloadCSV,collection,...canonical}=data;
     if(index.schema_version===2) { assert.deepEqual(canonical,validateSnapshot(canonical)); assert.equal(canonical.coverage.data_date,day.date); continue; }
     const file=await readFile(new URL(q.file,root),'utf8');
     assert.ok(q.file.endsWith(createHash('sha256').update(file).digest('hex')+'.json'));

@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-22",
+  "data_date": "2026-10-21",
   "publication_status": "interim",
+  "api_mode": "dated",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
     "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination"
@@ -12,40 +13,40 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 201031,
+  "candidates": 199919,
   "candidate_groups": {
-    "regular": 188384,
-    "eos-helios": 12647
+    "regular": 187312,
+    "eos-helios": 12607
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 6177,
+  "published_characters": 13343,
   "api_verified_groups": {
-    "regular": 349,
-    "eos-helios": 5828
+    "regular": 11935,
+    "eos-helios": 1408
   },
   "collection": {
     "state": "collecting",
-    "candidates": 201031,
-    "processed": 13622,
-    "pending": 187409,
-    "failed": 85,
+    "candidates": 199919,
+    "processed": 14776,
+    "pending": 185143,
+    "failed": 6,
     "skipped": 0,
-    "outside": 1525,
-    "unavailable": 302,
-    "verified": 6177,
-    "unverified": 5424,
-    "calculating": 109,
+    "outside": 0,
+    "unavailable": 0,
+    "verified": 13343,
+    "unverified": 1427,
+    "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-22T04:29:38.131540+00:00"
+    "as_of": "2026-10-22T06:03:47.466567+00:00"
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 942,
+      "last_page": 937,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
@@ -64,6 +65,7 @@
     }
   ],
   "notes": [
+    "All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.",
     "Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.",
     "Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.",
     "Counts are a publication snapshot, not a live progress counter."
