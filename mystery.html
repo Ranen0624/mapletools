@@ -14,7 +14,7 @@
 <meta property="og:url" content="https://mapletools.kr/mystery.html">
 <link rel="icon" href="favicon.ico">
 <link rel="stylesheet" href="styles.css?v=release-204">
-<link rel="stylesheet" href="mystery.css?v=10">
+<link rel="stylesheet" href="mystery.css?v=11">
 <script src="ui-motion.js?v=motion-1" defer></script><script src="app.js?v=motion-1" defer></script>
 <script type="module" src="mystery.js?v=daily-1"></script>
 <script type="text/javascript" src="https://openapi.nexon.com/js/analytics.js?app_id=343627" async></script>
@@ -43,8 +43,12 @@
       <div class="field"><label for="world-group">월드 분류</label><select id="world-group" name="group"><option value="regular">일반 월드</option><option value="eos-helios">에오스·핼리오스</option><option value="other">기타·이벤트 월드</option></select></div>
       <div class="field"><label for="world">월드</label><select id="world" name="world"><option value="">선택 분류 전체</option></select></div>
     </div>
+    <aside class="snapshot-warning" id="snapshot-warning" aria-label="전투력 수집 기록 안내">
+      <span class="snapshot-warning-mark" aria-hidden="true">!</span>
+      <div><strong>검색 전 확인해 주세요</strong><p>순위는 선택한 기준일의 수집 기록입니다. 칭호·이벤트 효과 만료나 장비·프리셋 변경 등으로 전투력이 일시적으로 낮게 기록되어, 현재 게임 내 수치와 다를 수 있습니다.</p></div>
+    </aside>
     <div class="actions">
-      <button type="submit" class="btn primary" id="search-btn">최강자 찾기 <span aria-hidden="true">↗</span></button>
+      <button type="submit" class="btn primary" id="search-btn" aria-describedby="snapshot-warning">최강자 찾기 <span aria-hidden="true">↗</span></button>
       <button type="button" class="btn subtle" id="open-local-import">내 CSV 분석</button>
       <button type="button" class="btn subtle" id="share-btn">링크 복사 <span aria-hidden="true">↗</span></button>
       <button type="button" class="btn subtle" id="filter-reset">조건 초기화</button>
