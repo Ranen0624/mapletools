@@ -55,7 +55,9 @@ export async function pruneHistory(root) {
   await assertSiteBudget(root,plan);
   const dates=catalog.dates.filter(d=>d.date>=plan.cutoff&&d.date<=catalog.latest);
   if(!dates.some(d=>d.date===catalog.latest))throw Error('최신 기록이 보관 범위에 없습니다.');
-  const next=JSON.stringify({...catalog,retention_days:days,dates},null,2)+'\n';
+  const {latest_dated:previousDated,...baseCatalog}=catalog;
+  const latestDated=dates.filter(d=>d.api_mode==='dated').map(d=>d.date).sort().at(-1);
+  const next=JSON.stringify({...baseCatalog,...(latestDated?{latest_dated:latestDated}:{}),retention_days:days,dates},null,2)+'\n';
   await writeFile(catalogPath+'.tmp',next);await rename(catalogPath+'.tmp',catalogPath);
   for(const e of plan.remove){
     // Validate every resolved absolute target immediately before recursive removal.

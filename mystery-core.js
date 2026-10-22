@@ -125,6 +125,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const dates = [...new Set(normalized.map(r => r.observedAt))];
   if (dates.length > 1 || (date && dates.length && dates[0] !== date)) throw Error('하나의 공개 수집본에는 동일한 기준일의 기록만 넣어 주세요.');
   if (date && !validDate(date)) throw Error('기준일은 YYYY-MM-DD 형식의 실제 날짜여야 합니다.');
+  if(coverage.api_mode!==undefined&&!['dated','live'].includes(coverage.api_mode))throw Error('API 기록 기준을 확인하세요.');
   const characters = uniqueCharacters(normalized);
   const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
   if(bases.size>1 || (coverage.combat_basis && !['preset','equipped'].includes(coverage.combat_basis)) ||
@@ -142,6 +143,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     worlds:worlds.length ? worlds : [...new Set(characters.map(r => r.world))],
     description:clean(coverage.description,500) || (characters.length ? '업로드한 검색 결과 범위' : '최초 수집 파일 등록 전입니다.'),
     limitations:list(coverage.limitations),...(coverage.combat_basis||bases.has('preset')?{combat_basis:coverage.combat_basis||'preset'}:{}),
+    ...(coverage.api_mode?{api_mode:coverage.api_mode}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }

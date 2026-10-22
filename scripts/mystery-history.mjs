@@ -44,9 +44,12 @@ export async function writeHistory(root,index,snapshots) {
   const file=`data/mystery-history/${index.data_date}/${hash}.json`;
   await writeFile(join(root,file),text);
   await assertSiteBudget(root,await retentionPlan(root,latest,days));
-  const dates=[...catalog.dates.filter(d=>d.date!==index.data_date),{date:index.data_date,index:file,verified:index.verified,updated_at:index.updated_at}].sort((a,b)=>b.date.localeCompare(a.date));
-  if(dates[0].date===index.data_date) await atomic(join(root,'data','mystery-index.json'),text);
-  await atomic(catalogPath,JSON.stringify({schema_version:1,latest:dates[0].date,dates},null,2)+'\n');
+  const dates=[...catalog.dates.filter(d=>d.date!==index.data_date),{date:index.data_date,index:file,verified:index.verified,updated_at:index.updated_at,...(index.coverage?.api_mode?{api_mode:index.coverage.api_mode}:{})}].sort((a,b)=>b.date.localeCompare(a.date));
+  const latestDated=dates.find(d=>d.api_mode==='dated')?.date;
+  const config=JSON.parse(await readFile(join(root,'mystery-config.json'),'utf8'));
+  const preferred=config.preferredApiMode==='dated'?latestDated:dates[0].date;
+  if(preferred===index.data_date) await atomic(join(root,'data','mystery-index.json'),text);
+  await atomic(catalogPath,JSON.stringify({schema_version:1,latest:dates[0].date,...(latestDated?{latest_dated:latestDated}:{}),dates},null,2)+'\n');
   await pruneHistory(root);
   return packed;
 }

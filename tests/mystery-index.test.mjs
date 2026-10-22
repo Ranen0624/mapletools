@@ -131,3 +131,48 @@ test('daily discovery uses its own candidate groups and never carries another da
   assert.throws(()=>discoveryMetadata({...fresh,candidate_groups:{regular:700,'eos-helios':100}},previous),/후보/);
   assert.deepEqual(discoveryMetadata({data_date:previous.data_date,candidates:640},{...previous,candidate_groups:{regular:1}}),{candidate_groups:{},discovery_coverage:[]});
 });
+
+test('dated defaults stay separate from newer live records and preserve the replaced revision',async()=>{
+  const evidence=fileURLToPath(new URL('./evidence/',import.meta.url));await mkdir(evidence,{recursive:true});
+  const root=await mkdtemp(join(evidence,'mystery-dated-'));
+  try{
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:'',historyRetentionDays:7}));
+    const publish=async(day,mode)=>{
+      await writeFile(input,rows.slice(0,4).map(r=>JSON.stringify({...r,observedAt:day})).join('\n'));
+      await writeFile(audit,JSON.stringify({data_date:day,api_mode:mode,candidates:4,counts:{verified:4}}));
+      await publishIndex({input,audit,root,archive:true});
+    };
+    await publish(date,'live');
+    const previous=JSON.parse(await readFile(join(root,'data/mystery-dates.json'),'utf8')).dates[0].index;
+    const original=await readFile(join(root,previous),'utf8');
+    await publish('2026-10-20','live');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:'',staticIndex:'data/mystery-index.json',staticCatalog:'data/mystery-dates.json',preferredApiMode:'dated'}));
+    await publish(date,'dated');
+    const catalog=JSON.parse(await readFile(join(root,'data/mystery-dates.json'),'utf8'));
+    assert.equal(catalog.latest,'2026-10-20');assert.equal(catalog.latest_dated,date);
+    const collection=JSON.parse(await readFile(join(root,'data/mystery-collection.json'),'utf8'));
+    assert.equal(collection.data_date,date);assert.equal(collection.api_mode,'dated');assert.equal(collection.published_characters,4);
+    assert.equal(await readFile(join(root,previous),'utf8'),original);
+    assert.equal(JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8')).data_date,date);
+    const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
+    const load=options=>loadRankingSource({fetcher,base:new URL('https://dated.test/'),options});
+    const preferred=await load({}),legacy=await load({date:'2026-10-20'});
+    assert.equal(preferred.coverage.data_date,date);assert.equal(preferred.coverage.api_mode,'dated');
+    assert.equal(legacy.coverage.api_mode,'live');assert(preferred.characters.every(r=>r.observedAt===date));
+    catalog.latest_dated='2026-10-20';await writeFile(join(root,'data/mystery-dates.json'),JSON.stringify(catalog));
+    await assert.rejects(load({}),/일일 기록/);
+  }finally{assert(root.startsWith(join(evidence,'mystery-dated-')));await rm(root,{recursive:true,force:true});}
+});
+
+test('a missing dated collection cannot silently fall back to the old live source',async()=>{
+  const evidence=fileURLToPath(new URL('./evidence/',import.meta.url));await mkdir(evidence,{recursive:true});
+  const root=await mkdtemp(join(evidence,'mystery-no-dated-'));
+  try{
+    await mkdir(join(root,'data'));await writeFile(join(root,'mystery-config.json'),JSON.stringify({staticIndex:'data/mystery-index.json',staticCatalog:'data/mystery-dates.json',preferredApiMode:'dated'}));
+    await writeFile(join(root,'data/mystery-dates.json'),JSON.stringify({schema_version:1,latest:date,dates:[{date,index:`data/mystery-history/${date}/${'a'.repeat(64)}.json`}]}));
+    const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
+    const result=await loadRankingSource({fetcher,base:new URL('https://missing.test/')});
+    assert.equal(result.characters.length,0);assert.equal(result.uncollectedDate,true);assert.equal(result.preferredApiMode,'dated');
+  }finally{assert(root.startsWith(join(evidence,'mystery-no-dated-')));await rm(root,{recursive:true,force:true});}
+});

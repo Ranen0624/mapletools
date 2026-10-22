@@ -19,6 +19,16 @@ test('public empty page shows three uncollected places and no images or values',
   assert.match(d.getElementById('snapshot-date').textContent,/미수집/); assert.match(d.getElementById('data-status').textContent,/미수집/); dom.window.close();
 });
 
+test('fixed API daily records are labelled separately from legacy dates',async()=>{
+  const s={...core.prepareSnapshot([row()],{coverage:{api_mode:'dated'}}),preferredApiMode:'dated',availableDates:['2026-10-20','2026-10-19'],availableDateModes:{'2026-10-20':'legacy','2026-10-19':'dated'}};
+  const dom=await setup(s),d=dom.window.document;
+  assert.match(d.getElementById('snapshot-date').textContent,/2026-10-19 · API 일일 기록/);
+  assert.match(d.getElementById('snapshot-basis').textContent,/분 단위 시점 지정 미지원/);
+  assert.match(d.getElementById('data-date').textContent,/최신 일일 기록/);
+  assert.match(d.getElementById('data-date').textContent,/2026-10-20 · 이전 수집본/);
+  dom.window.close();
+});
+
 test('loading a new date is explicitly pending until verified data arrives; no fake winners appear',async()=>{
  let resolve;
  const dom=await setup(()=>new Promise(r=>resolve=r)),d=dom.window.document;
