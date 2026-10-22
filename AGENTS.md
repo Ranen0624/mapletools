@@ -9,5 +9,5 @@
 - Never add developer Python sources, private API configuration, signing keys, generated C, R8 mappings, encrypted source backups or recovery keys to this repository.
 - Public PC application code must be compiled; public Android Python business logic must be native-compiled. Keep required third-party notices.
 - Confirm runtime behavior, package integrity and absence of private material before changing download links.
-- Current public version labels are PC 2.0.4 and Android 1.0.5. Android's internal versionCode must increase for upgrade compatibility.
+- Current public version labels are PC 2.0.5 and Android 1.0.6. Android's internal versionCode must increase for upgrade compatibility.
 - Historical patch-note dates are explicitly editorial feature milestones, not verified historical release dates. Preserve that distinction.
