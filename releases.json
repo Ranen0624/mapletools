@@ -1,31 +1,31 @@
 {
-  "updated": "2026-10-18",
+  "updated": "2026-10-22",
   "public_windows": {
-    "version": "2.0.4",
-    "file": "downloads/MapleTools_PC_Public_2.0.4.zip",
-    "bytes": 66466222,
-    "sha256": "cfa6255d610d4c8bdf4c945879cc50f7547b16857e8c332f454399b70a98d756",
+    "version": "2.0.5",
+    "file": "downloads/MapleTools_PC_Public_2.0.5.zip",
+    "bytes": 66478320,
+    "sha256": "0a84375ab224674fbe39ee0021f4c562937e5c6fbae9b8c2f32dd8e045f32bd1",
     "public_download": true,
     "requires_user_key": true,
     "launcher": "MapleTools.exe",
     "package_type": "Nuitka native compiled Windows x64 standalone",
     "device_tested": true,
-    "validation": "63 application modules compiled; native EXE home/equipment/union/coordi self-test passed; source and private-key scan passed."
+    "validation": "63 compiled application modules; Windows native home/equipment/union/coordi self-test; 4 saved actual API combat baselines exactly matched; public source/private-key scan passed."
   },
   "public_android": {
-    "version": "1.0.5",
-    "file": "downloads/MapleTools_Android_Public_1.0.5.apk",
-    "bytes": 24703173,
-    "sha256": "ff2b9535cf80114f7d155cd5a7afdfbefd72ca0c5e8052f192fa78e31ef1f260",
+    "version": "1.0.6",
+    "file": "downloads/MapleTools_Android_Public_1.0.6.apk",
+    "bytes": 24719853,
+    "sha256": "79ba3eb979a259001609c8bbd7336e076a83d2bc6d0625d81e8387e8e603e71b",
     "public_download": true,
     "requires_user_key": true,
     "minimum_android": "8.0",
     "abi": "arm64-v8a",
     "package_type": "R8 optimized APK with 25 Cython ARM64 application modules",
     "device_tested": false,
-    "version_code": 16,
+    "version_code": 17,
     "emulator_tested": true,
-    "validation": "Android 15 x86_64 installed WebView: visible outfit scope, date/world request parameters and retained conditions; source assets and ARM64 upgrade signer verified. Physical device not tested."
+    "validation": "Android 15 x86_64: native engine, 4 actual API combat baselines, duplicates/gender/expiry, WebView outfit flow and versionCode 16→17 setting-preserving upgrade passed. ARM64 package signer/16KB alignment verified. Physical ARM64 device not tested."
   },
   "web_demo_reference_version": "2.0.4",
   "patch_notes": "updates.html"
