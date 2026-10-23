@@ -3,9 +3,10 @@
   "data_date": "2026-10-22",
   "publication_status": "interim",
   "api_mode": "dated",
+  "calculation_scope": "presets-and-owned-android",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
-    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination"
+    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination including confirmed owned compatible Android equip combinations"
   },
   "ranking_basis": "calculated preset combat_power descending; exact equipped baseline validation required",
   "excluded_jobs": [
@@ -21,10 +22,10 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 93038,
+  "published_characters": 131675,
   "api_verified_groups": {
-    "regular": 86965,
-    "eos-helios": 6073
+    "regular": 123100,
+    "eos-helios": 8575
   },
   "collection": {
     "state": "collecting",
@@ -35,12 +36,12 @@
     "skipped": 0,
     "outside": 31874,
     "unavailable": 6217,
-    "verified": 93038,
-    "unverified": 64897,
+    "verified": 131675,
+    "unverified": 26260,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-23T02:39:29.417605+00:00"
+    "as_of": "2026-10-23T04:09:21.705942+00:00"
   },
   "discovery_coverage": [
     {
