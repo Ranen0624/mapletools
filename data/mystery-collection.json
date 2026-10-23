@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-21",
+  "data_date": "2026-10-22",
   "publication_status": "interim",
   "api_mode": "dated",
   "value_basis": {
@@ -13,40 +13,40 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 199919,
+  "candidates": 201031,
   "candidate_groups": {
-    "regular": 187312,
-    "eos-helios": 12607
+    "eos-helios": 12647,
+    "regular": 188384
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 91276,
+  "published_characters": 93038,
   "api_verified_groups": {
-    "regular": 85302,
-    "eos-helios": 5974
+    "regular": 86965,
+    "eos-helios": 6073
   },
   "collection": {
     "state": "collecting",
-    "candidates": 199919,
-    "processed": 199919,
+    "candidates": 201031,
+    "processed": 201031,
     "pending": 0,
-    "failed": 4104,
+    "failed": 5005,
     "skipped": 0,
-    "outside": 32497,
-    "unavailable": 6205,
-    "verified": 91276,
-    "unverified": 65837,
+    "outside": 31874,
+    "unavailable": 6217,
+    "verified": 93038,
+    "unverified": 64897,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-22T09:20:50.320325+00:00"
+    "as_of": "2026-10-23T02:39:29.417605+00:00"
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 937,
+      "last_page": 942,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
