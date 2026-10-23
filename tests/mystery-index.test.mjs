@@ -5,10 +5,27 @@ import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {queryAccumulator,publishIndex,discoveryMetadata} from '../scripts/publish-mystery-index.mjs';
-import {filterRank,snapshotCSV} from '../mystery-core.js';
+import {filterRank,snapshotCSV,AMMUNITION_LIMITATION,ammunitionHoldNotice} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
 const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:290+(i%11),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
+
+test('source-required publication rejects assumed ammo and preserves the hold notice for an empty job query',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'mystery-ammunition-'));
+  try{
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:''}));
+    const progress={data_date:date,candidates:1,counts:{verified:1},calculator_version:'preset-api-v11'};
+    await writeFile(input,JSON.stringify({...rows[0],job:'캡틴'}));await writeFile(audit,JSON.stringify(progress));
+    await assert.rejects(publishIndex({input,audit,root}),/사용 탄약/);
+    await writeFile(input,JSON.stringify(rows[0]));await publishIndex({input,audit,root});
+    const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
+    const selected=await loadRankingSource({fetcher,base:new URL('https://ammo.test/'),options:{job:'캡틴'}});
+    assert.equal(selected.characters.length,0);assert(selected.coverage.limitations.includes(AMMUNITION_LIMITATION));
+    assert.equal(ammunitionHoldNotice(selected.coverage,'캡틴'),'');
+    assert.match(ammunitionHoldNotice({...selected.coverage,combat_basis:'preset'},'캡틴'),/검증을 보류/);
+  }finally{assert(root.startsWith(join(tmpdir(),'mystery-ammunition-')));await rm(root,{recursive:true,force:true});}
+});
 
 test('TOP 10 per single level exactly preserves arbitrary interval TOP 10 and full population counts',()=>{
   const acc=queryAccumulator(date); rows.forEach(acc.add);

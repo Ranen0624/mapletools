@@ -1,4 +1,4 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate} from './mystery-core.js?v=owned-android-1';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=ammo-source-1';
 import {loadRankingSource} from './mystery-source.js?v=owned-android-1';
 import {loadCharacterDetail} from './mystery-details.js?v=9';
 const $ = id => document.getElementById(id);
@@ -71,6 +71,7 @@ function render() {
   const preset=c.combat_basis==='preset';
   $('snapshot-progress').textContent=snapshot.collection?`${c.calculation_scope==='presets-and-owned-android'?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':snapshot.collection.unverified?'일부 검증 보류':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.')+(c.calculation_scope==='presets-and-owned-android'?' 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다.':'');
+  if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
   const counts=snapshot.collection,collectionNotes=counts?[
     `전체 대기 ${(counts.pending||0).toLocaleString('ko-KR')}명`,
     ...(counts.calculating?[`계산 중 ${counts.calculating.toLocaleString('ko-KR')}명`]:[]),
@@ -80,9 +81,15 @@ function render() {
   $('snapshot-exclusions').textContent=['제논·데몬어벤져 집계 제외',...collectionNotes].join(' · ');
   updateDownloads();
   $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':local?`${c.data_date} 내 파일 기준 순위 · 홈페이지 공개 데이터와 별개입니다.`:failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'일부 검증 보류 · ':''}${c.calculation_scope==='presets-and-owned-android'?'확인된 안드로이드 장착 조합 포함 · ':preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
+  const ammoNotice=ammunitionHoldNotice(c,o.job,{local});
+  if(!busy&&!failure&&!ranked.length&&ammoNotice){
+    $('data-status').textContent='사용 탄약 정보 확인 불가 · 검증 보류';
+    $('coverage-note').textContent=ammoNotice;
+    for(let i=1;i<=3;i++){const card=$('podium-'+i);card.querySelector('.image-missing').textContent='검증 보류';card.querySelector('.character-name').textContent='검증 보류';}
+  }
   if(busy){$('snapshot-date').textContent=o.date||'최신 기록 확인 중';$('snapshot-progress').textContent='수집 기록 확인 중…';$('result-subtitle').textContent='조건에 맞는 기록을 확인하고 있습니다.';$('coverage-note').textContent='순위 기록을 불러오는 중입니다…';}
   const rows=ranked.slice(3,10).map((r,i)=>{ const row=el('tr'),name=el('td');name.append(nameButton(r));row.append(el('td','',String(i+4)),name);for(const v of [r.world,r.job,r.level])row.append(el('td','',String(v)));const combat=el('td','',r.combat.toLocaleString('ko-KR')); if(r.calculation) combat.append(el('small','preset-info',presetInfo(r))); row.append(combat);return row; });
-  if(!rows.length) { const row=el('tr'),cell=el('td','empty-table',busy?'순위 기록을 불러오는 중입니다…':'4~10위에 표시할 수집 기록이 없습니다.'); cell.colSpan=6; row.append(cell); rows.push(row); }
+  if(!rows.length) { const row=el('tr'),cell=el('td','empty-table',busy?'순위 기록을 불러오는 중입니다…':ammoNotice?'사용 탄약 정보 확인 전까지 조합 순위를 보류합니다.':'4~10위에 표시할 수집 기록이 없습니다.'); cell.colSpan=6; row.append(cell); rows.push(row); }
   $('rank-rows').replaceChildren(...rows);if(!busy)rows.forEach((row,i)=>window.MapleMotion?.animate(row,[{opacity:.25},{opacity:1}],{duration:180,delay:i*22})); $('local-notice').hidden=!local; $('public-reset').hidden=!local;
   $('local-analysis').hidden=!local;
   if(local){
