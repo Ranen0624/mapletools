@@ -65,8 +65,18 @@ export function normalizeCharacter(row, fallbackDate = '') {
     let c=row.calculation;
     if(typeof c==='string') { try {c=JSON.parse(c);} catch {return null;} }
     const p=c?.presets;
+    const policy=c?.equipment_policy,excluded=c?.excluded_equipment_presets;
+    const trainingNames=new Set(['어비스 헌터 링','어비스 헌터스 링','정령의 펜던트','스페셜 정령의 펜던트']);
+    let activeTraining=false;
+    if(policy!==undefined || Number(/^preset-api-v(\d+)$/.exec(String(c?.version))?.[1])>=14) {
+      if(policy!=='exclude-training-presets-v1' || !Number.isInteger(c?.active_equipment_preset) || c.active_equipment_preset<1 || c.active_equipment_preset>3 ||
+          !Array.isArray(excluded)||excluded.length>2 || new Set(excluded.map(r=>r?.preset)).size!==excluded.length ||
+          excluded.some(r=>!Number.isInteger(r?.preset)||r.preset<1||r.preset>3||!Array.isArray(r.items)||!r.items.length||r.items.some(name=>!trainingNames.has(name))) ||
+          excluded.some(r=>r.preset===p?.equipment))return null;
+      activeTraining=excluded.some(r=>r.preset===c.active_equipment_preset);
+    }
     if(!c || c.basis!=='preset' || !Number.isSafeInteger(c.api_combat) || c.api_combat<=0 ||
-        c.baseline_combat!==c.api_combat || combat<c.api_combat || !p ||
+        c.baseline_combat!==c.api_combat || (combat<c.api_combat&&!activeTraining) || !p ||
         ['equipment','hyper','ability','union'].some(k=>!Number.isInteger(p[k])||p[k]<1||p[k]>(k==='union'?10:3)) ||
         !Number.isInteger(c.combinations)||c.combinations<1||c.combinations>270 ||
         typeof c.version!=='string'||!/^preset-api-v\d+$/.test(c.version)||
@@ -74,6 +84,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
       presets:Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])),
       version:c.version,observed_at:c.observed_at,combinations:c.combinations};
+    if(policy)Object.assign(calculation,{equipment_policy:policy,active_equipment_preset:c.active_equipment_preset,excluded_equipment_presets:excluded.map(r=>({preset:r.preset,items:[...new Set(r.items)]}))});
     if(c.configuration_scope!==undefined) {
       if(c.configuration_scope!=='presets-and-owned-android')return null;
       calculation.configuration_scope=c.configuration_scope;
@@ -122,6 +133,7 @@ export function filterRank(rows, options = {}) {
   if (dates.size > 1) throw Error('서로 다른 기준일의 기록은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>r.calculation?'preset':'equipped')).size>1) throw Error('착용 전투력과 프리셋 계산 전투력은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.configuration_scope||'stored-presets')).size>1)throw Error('안드로이드 장착 조합의 계산 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
+  if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.equipment_policy||'all-presets')).size>1)throw Error('사냥 프리셋 제외 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   return uniqueCharacters(rows).filter(r => !jobExcluded(r.job) && r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
@@ -145,6 +157,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const characters = uniqueCharacters(normalized);
   const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
   const scopes=new Set(characters.map(r=>r.calculation?.configuration_scope||'stored-presets'));
+  const policies=new Set(characters.map(r=>r.calculation?.equipment_policy||'all-presets'));
+  if(policies.size>1 || (coverage.equipment_policy!==undefined&&coverage.equipment_policy!=='exclude-training-presets-v1') ||
+      (coverage.equipment_policy&&policies.size&&!policies.has(coverage.equipment_policy)))throw Error('사냥 프리셋 제외 기준이 일치하지 않습니다.');
   if(scopes.size>1 || (coverage.calculation_scope!==undefined && coverage.calculation_scope!=='presets-and-owned-android') ||
       (coverage.calculation_scope && scopes.size && !scopes.has(coverage.calculation_scope)))throw Error('안드로이드 장착 조합의 계산 기준이 일치하지 않습니다.');
   if(bases.size>1 || (coverage.combat_basis && !['preset','equipped'].includes(coverage.combat_basis)) ||
@@ -163,6 +178,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     description:clean(coverage.description,500) || (characters.length ? '업로드한 검색 결과 범위' : '최초 수집 파일 등록 전입니다.'),
     limitations:list(coverage.limitations),...(coverage.combat_basis||bases.has('preset')?{combat_basis:coverage.combat_basis||'preset'}:{}),
     ...(coverage.api_mode?{api_mode:coverage.api_mode}:{}),
+    ...(coverage.equipment_policy||policies.has('exclude-training-presets-v1')?{equipment_policy:'exclude-training-presets-v1'}:{}),
     ...(coverage.calculation_scope||scopes.has('presets-and-owned-android')?{calculation_scope:'presets-and-owned-android'}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};

@@ -52,6 +52,16 @@ test('owned Android basis and manual equip condition are visible with the origin
  dom.window.close();
 });
 
+test('combat-only ranking explains an excluded hunting preset alongside the larger equipped API value',async()=>{
+ const calculation={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:2,hyper:1,ability:1,union:1},version:'preset-api-v14',observed_at:'2026-10-22T07:00:00Z',combinations:1,
+   equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[{preset:1,items:['정령의 펜던트']}]};
+ const dom=await setup(core.prepareSnapshot([row(0,{combat:90,calculation})])),d=dom.window.document;
+ assert.match(d.getElementById('snapshot-basis').textContent,/사냥 장비 프리셋은 제외/);
+ d.querySelector('#podium-1 .name-button').click();await flush();
+ assert.match(d.getElementById('profile-presets').textContent,/사냥 프리셋 1 제외/);
+ assert.match(d.getElementById('profile-facts').textContent,/API 착용 전투력100/);dom.window.close();
+});
+
 test('loading a new date is explicitly pending until verified data arrives; no fake winners appear',async()=>{
  let resolve;
  const dom=await setup(()=>new Promise(r=>resolve=r)),d=dom.window.document;
