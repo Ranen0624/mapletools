@@ -4,6 +4,12 @@ export const MIN_LEVEL = 290;
 export const MAX_LEVEL = 300;
 export const EXCLUDED_JOBS = Object.freeze(['제논','데몬어벤져']);
 export const jobExcluded = job => EXCLUDED_JOBS.includes(String(job).replaceAll(' ',''));
+export const AMMUNITION_JOBS = Object.freeze(['보우마스터','신궁','윈드브레이커','와일드헌터','나이트로드','나이트워커','캡틴']);
+export const AMMUNITION_LIMITATION = '사용 중인 화살·표창·불릿은 전투력에 반영되지만 API에서 확인할 수 없어, 해당 자료는 탄약을 가정하지 않고 검증 보류합니다.';
+export function ammunitionHoldNotice(coverage,job,{local=false}={}) {
+  return !local && coverage?.combat_basis==='preset' && coverage?.limitations?.includes(AMMUNITION_LIMITATION) && AMMUNITION_JOBS.includes(job)
+    ? '사용 탄약을 API에서 확인할 수 없어 조합 전투력 검증을 보류했습니다. 탄약을 임의로 가정해 순위를 표시하지 않습니다.' : '';
+}
 export const MAX_CSV_BYTES = 5 * 1024 * 1024;
 export const WORLD_GROUPS = {
   regular: {label:'일반 월드',worlds:['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바']},
