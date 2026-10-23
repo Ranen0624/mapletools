@@ -69,7 +69,7 @@ function render() {
   $('snapshot-source').textContent=snapshot.source;
   $('history-retention').textContent=local?'내 파일은 공개 기록의 보관 기간과 관계없이 분석할 수 있습니다.':`최근 ${snapshot.historyRetentionDays||7}일의 기록을 제공합니다. 오래된 기록은 내 CSV 기록 분석을 이용하세요.`;
   const preset=c.combat_basis==='preset';
-  $('snapshot-progress').textContent=snapshot.collection?`${c.calculation_scope==='presets-and-owned-android'?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':snapshot.collection.unverified?'일부 검증 보류':'후보 조회 완료'}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
+  $('snapshot-progress').textContent=snapshot.collection?`${c.calculation_scope==='presets-and-owned-android'?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':`후보 조회 완료${snapshot.collection.unverified?' · 일부 검증 보류':''}${snapshot.collection.failed?' · 일부 조회 오류':''}`}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.')+(c.calculation_scope==='presets-and-owned-android'?' 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다.':'');
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
   const counts=snapshot.collection,collectionNotes=counts?[
@@ -80,7 +80,7 @@ function render() {
   ]:[];
   $('snapshot-exclusions').textContent=['제논·데몬어벤져 집계 제외',...collectionNotes].join(' · ');
   updateDownloads();
-  $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':local?`${c.data_date} 내 파일 기준 순위 · 홈페이지 공개 데이터와 별개입니다.`:failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${snapshot.collection?.state==='collecting'?'일부 검증 보류 · ':''}${c.calculation_scope==='presets-and-owned-android'?'확인된 안드로이드 장착 조합 포함 · ':preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
+  $('coverage-note').textContent=excluded?'제논·데몬어벤져는 집계에서 제외합니다.':local?`${c.data_date} 내 파일 기준 순위 · 홈페이지 공개 데이터와 별개입니다.`:failure?'불러오지 못했습니다. 잠시 후 다시 검색해 주세요.':snapshot.uncollectedDate?'선택한 날짜는 미수집입니다. 다른 기준일을 선택하세요.':ranked.length?`${c.status==='partial'?'일부 수집·검증 · ':''}${c.calculation_scope==='presets-and-owned-android'?'확인된 안드로이드 장착 조합 포함 · ':preset?'프리셋 계산값 · ':''}수집본 내 순위입니다.`:'선택 조건의 기록이 아직 없습니다.';
   const ammoNotice=ammunitionHoldNotice(c,o.job,{local});
   if(!busy&&!failure&&!ranked.length&&ammoNotice){
     $('data-status').textContent='사용 탄약 정보 확인 불가 · 검증 보류';

@@ -19,6 +19,16 @@ test('public empty page shows three uncollected places and no images or values',
   assert.match(d.getElementById('snapshot-date').textContent,/미수집/); assert.match(d.getElementById('data-status').textContent,/미수집/); dom.window.close();
 });
 
+test('finished candidate lookup distinguishes calculation holds and API errors from active collection',async()=>{
+  const s={...core.prepareSnapshot([row()]),collection:{state:'scanned',verified:1,candidates:4,pending:0,calculating:0,unverified:2,failed:1}};
+  const dom=await setup(s),d=dom.window.document;
+  const progress=d.getElementById('snapshot-progress').textContent;
+  assert.match(progress,/후보 조회 완료/);assert.match(progress,/검증 보류/);assert.match(progress,/조회 오류/);
+  assert.doesNotMatch(progress,/수집 중/);
+  assert.match(d.getElementById('coverage-note').textContent,/일부 수집·검증/);
+  dom.window.close();
+});
+
 test('fixed API daily records are labelled separately from legacy dates',async()=>{
   const s={...core.prepareSnapshot([row()],{coverage:{api_mode:'dated'}}),preferredApiMode:'dated',availableDates:['2026-10-20','2026-10-19'],availableDateModes:{'2026-10-20':'legacy','2026-10-19':'dated'}};
   const dom=await setup(s),d=dom.window.document;
