@@ -6,9 +6,10 @@ import {createHash} from 'node:crypto';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeHistory} from './mystery-history.mjs';
-import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES} from '../mystery-core.js';
+import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION} from '../mystery-core.js';
 
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
+const requiresAmmoSource=version=>Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1])>=11;
 export function queryAccumulator(date) {
   const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(); let inputRows=0,scopeExcluded=0;
   function add(raw) {
@@ -60,7 +61,11 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const incomplete=!!(counts.pending||counts.collected||counts.error||counts.unverified);
   if(incomplete&&!allowPartial) throw Error('전체 후보 API 검증과 오류 재확인이 끝난 작업만 공개할 수 있습니다. 중간 공개는 --allow-partial을 명시하세요.');
   const acc=queryAccumulator(progress.data_date);
-  for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})) if(line.trim()) acc.add(JSON.parse(line));
+  for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})) if(line.trim()) {
+    const raw=JSON.parse(line);
+    if((requiresAmmoSource(progress.calculator_version)||requiresAmmoSource(raw.calculation?.version)) && AMMUNITION_JOBS.includes(normalizeCharacter(raw)?.job)) throw Error('사용 탄약의 독립 근거가 없는 계산 기록은 공개할 수 없습니다.');
+    acc.add(raw);
+  }
   if(acc.inputRows!==counts.verified || !acc.total) throw Error('수집 완료 기록과 API 원본 행 수가 일치하지 않습니다.');
   const preset=acc.bases.has('preset');
   const ownedAndroid=acc.scopes.has('presets-and-owned-android');
@@ -83,6 +88,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
       ...(progress.api_mode==='dated'?['표시된 날짜의 API 일일 기록입니다. API는 분 단위 시점을 지정하지 않으며 정확한 23:59 스냅샷을 의미하지 않습니다.']:[]),
       ...(preset?['같은 기준일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
       ...(ownedAndroid?['API에서 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다. 현재 착용 전투력과 다를 수 있으며 필요한 장착은 캐릭터 상세에 표시합니다.']:[]),
+      ...(requiresAmmoSource(progress.calculator_version)?[AMMUNITION_LIMITATION]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {

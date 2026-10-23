@@ -4,10 +4,19 @@ import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
-import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup} from '../mystery-core.js';
+import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup,AMMUNITION_LIMITATION,ammunitionHoldNotice} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 import {importFile} from '../scripts/import-mystery.mjs';
 const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:290+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
+
+test('ammunition holds explain missing API evidence only for the flagged public preset snapshot',()=>{
+  const coverage={combat_basis:'preset',limitations:[AMMUNITION_LIMITATION]};
+  assert.match(ammunitionHoldNotice(coverage,'캡틴'),/검증을 보류/);
+  assert.equal(ammunitionHoldNotice(coverage,'아델'),'');
+  assert.equal(ammunitionHoldNotice(coverage,'캡틴',{local:true}),'');
+  assert.equal(ammunitionHoldNotice({...coverage,combat_basis:'equipped'},'캡틴'),'');
+  assert.equal(ammunitionHoldNotice({combat_basis:'preset',limitations:[]},'캡틴'),'');
+});
 test('empty feed never invents a winner',()=>{ const s=validateSnapshot(emptySnapshot()); assert.equal(filterRank(s.characters).length,0); assert.match(collectionStatus(s,{},0),/미수집/); });
 test('inclusive level boundaries, jobs/worlds, deterministic ties and top ten',()=>{
   const rows=Array.from({length:16},(_,i)=>row(i));
