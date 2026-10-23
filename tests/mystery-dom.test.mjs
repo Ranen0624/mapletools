@@ -29,6 +29,19 @@ test('fixed API daily records are labelled separately from legacy dates',async()
   dom.window.close();
 });
 
+test('owned Android basis and manual equip condition are visible with the original API power',async()=>{
+ const calculation={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:2,hyper:1,ability:1,union:1},version:'preset-api-v5',observed_at:'2026-10-20T07:00:00Z',combinations:1,configuration_scope:'presets-and-owned-android',android:{name:'검증용 안드로이드',source_preset:1,manual_equip:true}};
+ const dom=await setup(core.prepareSnapshot([row(0,{combat:200,calculation})])),d=dom.window.document;
+ assert.match(d.getElementById('coverage-note').textContent,/안드로이드 장착 조합 포함/);
+ assert.match(d.getElementById('snapshot-basis').textContent,/직접 장착/);
+ assert.match(d.querySelector('#podium-1 .combat-caption').textContent,/조합 계산/);
+ d.querySelector('#podium-1 .name-button').click();await flush();
+ assert.match(d.getElementById('profile-facts').textContent,/검증용 안드로이드/);
+ assert.match(d.getElementById('profile-facts').textContent,/직접 장착/);
+ assert.match(d.getElementById('profile-facts').textContent,/API 착용 전투력100/);
+ dom.window.close();
+});
+
 test('loading a new date is explicitly pending until verified data arrives; no fake winners appear',async()=>{
  let resolve;
  const dom=await setup(()=>new Promise(r=>resolve=r)),d=dom.window.document;

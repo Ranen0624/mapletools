@@ -60,6 +60,19 @@ test('scope and exhaustive claims are explicit and bounded to selected scope',()
 test('CSV export prevents formula execution',()=>{ const s=prepareSnapshot([row(0,{name:'=CHECK_ONLY'})]); assert(snapshotCSV(s).includes("'=CHECK_ONLY")); });
 
 const calculation={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:2,ability:3,union:10},version:'preset-api-v1',observed_at:'2026-10-20T07:00:00Z',combinations:270};
+
+test('confirmed owned Android combinations preserve their basis and safe details in personal CSV',()=>{
+ const owned={...calculation,version:'preset-api-v5',configuration_scope:'presets-and-owned-android',android:{name:'검증용 안드로이드',source_preset:1,manual_equip:true,secret:'NEVER_PUBLISH'}};
+ const s=prepareSnapshot([row(0,{combat:200,calculation:owned})]);
+ assert.equal(s.coverage.calculation_scope,'presets-and-owned-android');
+ assert.deepEqual(s.characters[0].calculation.android,{name:'검증용 안드로이드',source_preset:1,manual_equip:true});
+ assert.equal(JSON.stringify(s).includes('NEVER_PUBLISH'),false);
+ assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+ assert.deepEqual(validateSnapshot(s),s);
+ assert.throws(()=>prepareSnapshot([row(0,{combat:200,calculation:owned}),row(1,{combat:200,calculation})]),/계산 기준/);
+ assert.throws(()=>filterRank([row(0,{combat:200,calculation:owned}),row(1,{combat:200,calculation})]),/계산 기준/);
+ for(const android of [{...owned.android,source_preset:4},{...owned.android,name:''},{...owned.android,manual_equip:'true'}])assert.throws(()=>prepareSnapshot([row(0,{combat:200,calculation:{...owned,android}})]));
+});
 test('preset records preserve their evidence through JSON and CSV and reject unverified or mixed bases',()=>{
   const s=prepareSnapshot([row(0,{combat:200,calculation:{...calculation,api_key:'NEVER_PUBLISH',presets:{...calculation.presets,secret:'NEVER_PUBLISH'}}})]);
   assert.equal(s.coverage.combat_basis,'preset');assert.equal(s.characters[0].calculation.api_combat,100);
