@@ -68,6 +68,15 @@ export function normalizeCharacter(row, fallbackDate = '') {
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
       presets:Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])),
       version:c.version,observed_at:c.observed_at,combinations:c.combinations};
+    if(c.configuration_scope!==undefined) {
+      if(c.configuration_scope!=='presets-and-owned-android')return null;
+      calculation.configuration_scope=c.configuration_scope;
+      if(c.android!==undefined) {
+        const a=c.android;
+        if(!a || !clean(a.name) || !Number.isInteger(a.source_preset) || a.source_preset<1 || a.source_preset>3 || typeof a.manual_equip!=='boolean')return null;
+        calculation.android={name:clean(a.name),source_preset:a.source_preset,manual_equip:a.manual_equip};
+      }
+    } else if(c.android!==undefined)return null;
   }
   return {name,world,job,level,combat,image,observedAt,ocid:clean(get('ocid')),...(calculation?{calculation}:{})};
 }
@@ -106,6 +115,7 @@ export function filterRank(rows, options = {}) {
   const dates = new Set(rows.map(r => normalizeCharacter(r)?.observedAt).filter(Boolean));
   if (dates.size > 1) throw Error('서로 다른 기준일의 기록은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>r.calculation?'preset':'equipped')).size>1) throw Error('착용 전투력과 프리셋 계산 전투력은 한 순위로 비교할 수 없습니다.');
+  if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.configuration_scope||'stored-presets')).size>1)throw Error('안드로이드 장착 조합의 계산 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   return uniqueCharacters(rows).filter(r => !jobExcluded(r.job) && r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
@@ -128,6 +138,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   if(coverage.api_mode!==undefined&&!['dated','live'].includes(coverage.api_mode))throw Error('API 기록 기준을 확인하세요.');
   const characters = uniqueCharacters(normalized);
   const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
+  const scopes=new Set(characters.map(r=>r.calculation?.configuration_scope||'stored-presets'));
+  if(scopes.size>1 || (coverage.calculation_scope!==undefined && coverage.calculation_scope!=='presets-and-owned-android') ||
+      (coverage.calculation_scope && scopes.size && !scopes.has(coverage.calculation_scope)))throw Error('안드로이드 장착 조합의 계산 기준이 일치하지 않습니다.');
   if(bases.size>1 || (coverage.combat_basis && !['preset','equipped'].includes(coverage.combat_basis)) ||
       (coverage.combat_basis && bases.size && !bases.has(coverage.combat_basis))) throw Error('전투력 집계 기준이 일치하지 않습니다.');
   const list = v => Array.isArray(v) ? [...new Set(v.map(x => clean(x)).filter(Boolean))] : [];
@@ -144,6 +157,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     description:clean(coverage.description,500) || (characters.length ? '업로드한 검색 결과 범위' : '최초 수집 파일 등록 전입니다.'),
     limitations:list(coverage.limitations),...(coverage.combat_basis||bases.has('preset')?{combat_basis:coverage.combat_basis||'preset'}:{}),
     ...(coverage.api_mode?{api_mode:coverage.api_mode}:{}),
+    ...(coverage.calculation_scope||scopes.has('presets-and-owned-android')?{calculation_scope:'presets-and-owned-android'}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }
