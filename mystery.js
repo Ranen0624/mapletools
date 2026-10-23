@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=ammo-source-1';
-import {loadRankingSource} from './mystery-source.js?v=owned-android-1';
-import {loadCharacterDetail} from './mystery-details.js?v=9';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=20261023-combat14';
+import {loadRankingSource} from './mystery-source.js?v=20261023-combat14';
+import {loadCharacterDetail} from './mystery-details.js?v=20261023-combat14';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -72,6 +72,7 @@ function render() {
   $('snapshot-progress').textContent=snapshot.collection?`${c.calculation_scope==='presets-and-owned-android'?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':`후보 조회 완료${snapshot.collection.unverified?' · 일부 검증 보류':''}${snapshot.collection.failed?' · 일부 조회 오류':''}`}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.')+(c.calculation_scope==='presets-and-owned-android'?' 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다.':'');
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
+  if(c.equipment_policy==='exclude-training-presets-v1') $('snapshot-basis').textContent+=' 어비스 헌터스 링·정령의 펜던트가 있는 사냥 장비 프리셋은 제외합니다.';
   const counts=snapshot.collection,collectionNotes=counts?[
     `전체 대기 ${(counts.pending||0).toLocaleString('ko-KR')}명`,
     ...(counts.calculating?[`계산 중 ${counts.calculating.toLocaleString('ko-KR')}명`]:[]),
@@ -190,6 +191,7 @@ function showOutfit(character,trigger) {
     if(a.manual_equip)$('profile-facts').append(fact('장착 조건',`프리셋 ${a.source_preset}의 안드로이드 직접 장착`));
   }
   $('profile-presets').textContent=character.calculation?'계산 조합 · '+presetInfo(character):'';
+  if(character.calculation?.excluded_equipment_presets?.length) $('profile-presets').textContent+=' · 사냥 프리셋 '+character.calculation.excluded_equipment_presets.map(r=>r.preset).sort().join(', ')+' 제외';
   $('profile-prev').disabled=profileIndex<=0;$('profile-next').disabled=profileIndex<0||profileIndex>=currentRanked.length-1;
   $('profile-outfit-preset').textContent='';$('profile-outfit-items').replaceChildren();
   $('profile-detail-status').textContent=local?'내 파일에 코디 착용 정보가 포함되어 있지 않습니다.':'코디 착용 정보 불러오는 중…';

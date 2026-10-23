@@ -1,4 +1,4 @@
-import {validDate,MAX_CSV_BYTES} from './mystery-core.js?v=9';
+import {validDate,MAX_CSV_BYTES} from './mystery-core.js?v=20261023-combat14';
 const clean=(v,max=120)=>typeof v==='string'&&v.length<=max&&!/[\u0000-\u001f]/.test(v)?v.trim():null;
 export function normalizeDetail(raw) {
   if(!raw||typeof raw!=='object'||!validDate(raw.date)||!clean(raw.ocid,100)||!clean(raw.name)||!clean(raw.world)||

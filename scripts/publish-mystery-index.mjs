@@ -11,7 +11,7 @@ import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGr
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
 const requiresAmmoSource=version=>Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1])>=11;
 export function queryAccumulator(date) {
-  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(); let inputRows=0,scopeExcluded=0;
+  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(),policies=new Set(); let inputRows=0,scopeExcluded=0;
   function add(raw) {
     inputRows++;
     const row=normalizeCharacter(raw);
@@ -21,6 +21,8 @@ export function queryAccumulator(date) {
     if(bases.size>1) throw Error('착용 전투력과 프리셋 계산값을 혼합할 수 없습니다.');
     scopes.add(row.calculation?.configuration_scope||'stored-presets');
     if(scopes.size>1)throw Error('안드로이드 장착 조합의 계산 기준이 다른 기록을 혼합할 수 없습니다.');
+    policies.add(row.calculation?.equipment_policy||'all-presets');
+    if(policies.size>1)throw Error('사냥 프리셋 제외 기준이 다른 기록을 혼합할 수 없습니다.');
     const key=row.ocid||JSON.stringify([row.world,row.name]),serialized=createHash('sha256').update(JSON.stringify(row)).digest('hex');
     const nameKey=JSON.stringify([row.world,row.name]);
     if(names.has(nameKey)&&names.get(nameKey)!==key) throw Error('같은 기준일 캐릭터의 식별자가 충돌합니다.');
@@ -34,7 +36,7 @@ export function queryAccumulator(date) {
       const top=q.levels.get(row.level)||[]; top.push(row); top.sort(compare); top.length=Math.min(10,top.length); q.levels.set(row.level,top);
     }
   }
-  return {add,queries,jobs,worlds,bases,scopes,get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
+  return {add,queries,jobs,worlds,bases,scopes,policies,get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
 }
 
 export function discoveryMetadata(progress,previous={}) {
@@ -69,6 +71,8 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   if(acc.inputRows!==counts.verified || !acc.total) throw Error('수집 완료 기록과 API 원본 행 수가 일치하지 않습니다.');
   const preset=acc.bases.has('preset');
   const ownedAndroid=acc.scopes.has('presets-and-owned-android');
+  const combatOnly=acc.policies.has('exclude-training-presets-v1');
+  if(combatOnly!==(progress.equipment_policy==='exclude-training-presets-v1'))throw Error('수집본과 사냥 프리셋 제외 기준이 다릅니다.');
   if(ownedAndroid!==(progress.calculation_scope==='presets-and-owned-android'))throw Error('수집본과 안드로이드 장착 조합의 계산 기준이 다릅니다.');
   if(preset !== (progress.basis==='preset')) throw Error('수집 기록의 계산 기준이 원본과 다릅니다.');
   const data=join(root,'data'),cache=join(data,'mystery-cache'); await mkdir(cache,{recursive:true});
@@ -81,6 +85,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
     combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     ...(ownedAndroid?{calculation_scope:'presets-and-owned-android'}:{}),
+    ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${ownedAndroid?'프리셋·안드로이드 조합':preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
     limitations:[...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
       '이름 목록 확보에 사용한 랭킹 순위·레벨로 전투력 시상 순위를 결정하지 않습니다.',
@@ -88,6 +93,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
       ...(progress.api_mode==='dated'?['표시된 날짜의 API 일일 기록입니다. API는 분 단위 시점을 지정하지 않으며 정확한 23:59 스냅샷을 의미하지 않습니다.']:[]),
       ...(preset?['같은 기준일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
       ...(ownedAndroid?['API에서 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다. 현재 착용 전투력과 다를 수 있으며 필요한 장착은 캐릭터 상세에 표시합니다.']:[]),
+      ...(combatOnly?['어비스 헌터스 링·어비스 헌터 링·정령의 펜던트·스페셜 정령의 펜던트가 있는 장비 프리셋은 사냥 세팅으로 제외합니다. 현재 착용 프리셋이 제외되면 계산 전투력이 착용 전투력보다 낮을 수 있습니다.']:[]),
       ...(requiresAmmoSource(progress.calculator_version)?[AMMUNITION_LIMITATION]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
   const entries=[],snapshots=[];
@@ -110,9 +116,10 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   else await writeFile(join(data,'mystery-index.json'),JSON.stringify(index,null,2)+'\n');
   const groups=Object.fromEntries([...acc.queries.values()].filter(q=>!q.world&&!q.job).map(q=>[q.group,[...q.counts.values()].reduce((a,b)=>a+b,0)]));
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
+    ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     ...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     ...(ownedAndroid?{calculation_scope:'presets-and-owned-android'}:{}),
-    value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination'+(ownedAndroid?' including confirmed owned compatible Android equip combinations':''):'character/stat final_stat[stat_name=전투력]'},
+    value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination'+(ownedAndroid?' including confirmed owned compatible Android equip combinations':'')+(combatOnly?' excluding named training equipment presets':''):'character/stat final_stat[stat_name=전투력]'},
     ranking_basis:preset?'calculated preset combat_power descending; exact equipped baseline validation required':'API combat_power descending; API basic level/job/world only',
     excluded_jobs:[...EXCLUDED_JOBS],
     candidate_discovery:'ranking/overall API for names only; includes level 289 as a date-boundary buffer',
