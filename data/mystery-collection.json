@@ -21,26 +21,26 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 13343,
+  "published_characters": 91276,
   "api_verified_groups": {
-    "regular": 11935,
-    "eos-helios": 1408
+    "regular": 85302,
+    "eos-helios": 5974
   },
   "collection": {
     "state": "collecting",
     "candidates": 199919,
-    "processed": 14776,
-    "pending": 185143,
-    "failed": 6,
+    "processed": 199919,
+    "pending": 0,
+    "failed": 4104,
     "skipped": 0,
-    "outside": 0,
-    "unavailable": 0,
-    "verified": 13343,
-    "unverified": 1427,
+    "outside": 32497,
+    "unavailable": 6205,
+    "verified": 91276,
+    "unverified": 65837,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-22T06:03:47.466567+00:00"
+    "as_of": "2026-10-22T09:20:50.320325+00:00"
   },
   "discovery_coverage": [
     {
