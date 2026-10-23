@@ -94,6 +94,19 @@ test('preset records preserve their evidence through JSON and CSV and reject unv
   assert.throws(()=>filterRank([row(0,{calculation}),row(1)]),/한 순위/);
 });
 
+test('combat-only equipment policy preserves exclusions and only permits a lower value for an excluded active preset',()=>{
+  const c={...calculation,version:'preset-api-v14',equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,
+    excluded_equipment_presets:[{preset:1,items:['스페셜 정령의 펜던트']}],presets:{...calculation.presets,equipment:2}};
+  const s=prepareSnapshot([row(0,{combat:90,calculation:c})]);
+  assert.equal(s.coverage.equipment_policy,'exclude-training-presets-v1');
+  assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+  for(const bad of [{...c,excluded_equipment_presets:[]},{...c,active_equipment_preset:2},
+    {...c,presets:{...c.presets,equipment:1}},{...c,excluded_equipment_presets:[{preset:1,items:['NOT A TRAINING ITEM']}]},
+    {...c,equipment_policy:undefined},{...c,baseline_combat:99}])assert.throws(()=>prepareSnapshot([row(0,{combat:90,calculation:bad})]));
+  assert.throws(()=>prepareSnapshot([row(0,{calculation:c}),row(1,{calculation})]),/사냥 프리셋/);
+  assert.throws(()=>filterRank([row(0,{calculation:c}),row(1,{calculation})]),/사냥 프리셋/);
+});
+
 test('Xenon and Demon Avenger never enter any ranking scope',()=>{
   const rows=[row(),row(1,{job:'제논',combat:999}),row(2,{job:'데몬어벤져',combat:998}),row(3,{job:'비숍',combat:110})];
   assert.deepEqual(filterRank(rows).map(r=>r.job),['비숍','아델']);
