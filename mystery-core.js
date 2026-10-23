@@ -11,6 +11,9 @@ export function ammunitionHoldNotice(coverage,job,{local=false}={}) {
     ? '사용 탄약을 API에서 확인할 수 없어 조합 전투력 검증을 보류했습니다. 탄약을 임의로 가정해 순위를 표시하지 않습니다.' : '';
 }
 export const MAX_CSV_BYTES = 5 * 1024 * 1024;
+export const CASH_EFFECT_POLICY = 'cash-base-and-confirmed-plus-v1';
+export const CASH_SCOPE = 'presets-owned-android-cash-plus';
+const calculationScopes = new Set(['presets-and-owned-android',CASH_SCOPE]);
 export const WORLD_GROUPS = {
   regular: {label:'일반 월드',worlds:['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바']},
   'eos-helios': {label:'에오스·핼리오스',worlds:['에오스','핼리오스']},
@@ -78,7 +81,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
     if(!c || c.basis!=='preset' || !Number.isSafeInteger(c.api_combat) || c.api_combat<=0 ||
         c.baseline_combat!==c.api_combat || (combat<c.api_combat&&!activeTraining) || !p ||
         ['equipment','hyper','ability','union'].some(k=>!Number.isInteger(p[k])||p[k]<1||p[k]>(k==='union'?10:3)) ||
-        !Number.isInteger(c.combinations)||c.combinations<1||c.combinations>270 ||
+        !Number.isInteger(c.combinations)||c.combinations<1||c.combinations>(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15?1350:270) ||
         typeof c.version!=='string'||!/^preset-api-v\d+$/.test(c.version)||
         typeof c.observed_at!=='string'||!/^\d{4}-\d{2}-\d{2}T/.test(c.observed_at)||Number.isNaN(Date.parse(c.observed_at))) return null;
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
@@ -86,7 +89,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
       version:c.version,observed_at:c.observed_at,combinations:c.combinations};
     if(policy)Object.assign(calculation,{equipment_policy:policy,active_equipment_preset:c.active_equipment_preset,excluded_equipment_presets:excluded.map(r=>({preset:r.preset,items:[...new Set(r.items)]}))});
     if(c.configuration_scope!==undefined) {
-      if(c.configuration_scope!=='presets-and-owned-android')return null;
+      if(!calculationScopes.has(c.configuration_scope))return null;
       calculation.configuration_scope=c.configuration_scope;
       if(c.android!==undefined) {
         const a=c.android;
@@ -94,6 +97,20 @@ export function normalizeCharacter(row, fallbackDate = '') {
         calculation.android={name:clean(a.name),source_preset:a.source_preset,manual_equip:a.manual_equip};
       }
     } else if(c.android!==undefined)return null;
+    if(c.configuration_scope===CASH_SCOPE || Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15) {
+      if(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])<15||c.configuration_scope!==CASH_SCOPE||c.cash_effect_policy!==CASH_EFFECT_POLICY)return null;
+      calculation.cash_effect_policy=CASH_EFFECT_POLICY;
+      if(c.cash_plus!==undefined) {
+        const v=c.cash_plus;
+        if(!v||!Number.isInteger(v.preset)||v.preset<0||v.preset>3||!Number.isInteger(v.count)||v.count<1||v.count>5)return null;
+        calculation.cash_plus={preset:v.preset,count:v.count};
+      }
+      if(c.cash_set_adjustments!==undefined) {
+        const sets=c.cash_set_adjustments;
+        if(!Array.isArray(sets)||sets.length>20||sets.some(v=>!clean(v?.set)||!Number.isInteger(v.before)||v.before<1||v.before>10||!Number.isInteger(v.after)||v.after<0||v.after>=v.before))return null;
+        calculation.cash_set_adjustments=sets.map(v=>({set:clean(v.set),before:v.before,after:v.after}));
+      }
+    } else if(c.cash_effect_policy!==undefined||c.cash_plus!==undefined||c.cash_set_adjustments!==undefined)return null;
   }
   return {name,world,job,level,combat,image,observedAt,ocid:clean(get('ocid')),...(calculation?{calculation}:{})};
 }
@@ -158,9 +175,10 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
   const scopes=new Set(characters.map(r=>r.calculation?.configuration_scope||'stored-presets'));
   const policies=new Set(characters.map(r=>r.calculation?.equipment_policy||'all-presets'));
+  if(coverage.cash_effect_policy!==undefined && (coverage.cash_effect_policy!==CASH_EFFECT_POLICY||coverage.calculation_scope!==CASH_SCOPE||(scopes.size&&!scopes.has(CASH_SCOPE))))throw Error('캐시 효과의 계산 기준이 일치하지 않습니다.');
   if(policies.size>1 || (coverage.equipment_policy!==undefined&&coverage.equipment_policy!=='exclude-training-presets-v1') ||
       (coverage.equipment_policy&&policies.size&&!policies.has(coverage.equipment_policy)))throw Error('사냥 프리셋 제외 기준이 일치하지 않습니다.');
-  if(scopes.size>1 || (coverage.calculation_scope!==undefined && coverage.calculation_scope!=='presets-and-owned-android') ||
+  if(scopes.size>1 || (coverage.calculation_scope!==undefined && !calculationScopes.has(coverage.calculation_scope)) ||
       (coverage.calculation_scope && scopes.size && !scopes.has(coverage.calculation_scope)))throw Error('안드로이드 장착 조합의 계산 기준이 일치하지 않습니다.');
   if(bases.size>1 || (coverage.combat_basis && !['preset','equipped'].includes(coverage.combat_basis)) ||
       (coverage.combat_basis && bases.size && !bases.has(coverage.combat_basis))) throw Error('전투력 집계 기준이 일치하지 않습니다.');
@@ -179,7 +197,8 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     limitations:list(coverage.limitations),...(coverage.combat_basis||bases.has('preset')?{combat_basis:coverage.combat_basis||'preset'}:{}),
     ...(coverage.api_mode?{api_mode:coverage.api_mode}:{}),
     ...(coverage.equipment_policy||policies.has('exclude-training-presets-v1')?{equipment_policy:'exclude-training-presets-v1'}:{}),
-    ...(coverage.calculation_scope||scopes.has('presets-and-owned-android')?{calculation_scope:'presets-and-owned-android'}:{}),
+    ...(coverage.calculation_scope||[...scopes].some(s=>calculationScopes.has(s))?{calculation_scope:coverage.calculation_scope||[...scopes][0]}:{}),
+    ...(scopes.has(CASH_SCOPE)||coverage.cash_effect_policy===CASH_EFFECT_POLICY?{cash_effect_policy:CASH_EFFECT_POLICY}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }

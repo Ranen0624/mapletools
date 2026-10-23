@@ -4,10 +4,11 @@
   "publication_status": "interim",
   "equipment_policy": "exclude-training-presets-v1",
   "api_mode": "dated",
-  "calculation_scope": "presets-and-owned-android",
+  "calculation_scope": "presets-owned-android-cash-plus",
+  "cash_effect_policy": "cash-base-and-confirmed-plus-v1",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
-    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination including confirmed owned compatible Android equip combinations excluding named training equipment presets"
+    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination including confirmed owned compatible Android equip combinations including confirmed Master Label Plus appearance choices; cash item stats from stat-bearing base slots only excluding named training equipment presets"
   },
   "ranking_basis": "calculated preset combat_power descending; exact equipped baseline validation required",
   "excluded_jobs": [
@@ -23,10 +24,10 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 118021,
+  "published_characters": 122508,
   "api_verified_groups": {
-    "regular": 110541,
-    "eos-helios": 7480
+    "regular": 114702,
+    "eos-helios": 7806
   },
   "collection": {
     "state": "scanned",
@@ -37,12 +38,17 @@
     "skipped": 0,
     "outside": 31746,
     "unavailable": 6704,
-    "verified": 118021,
-    "unverified": 38854,
+    "verified": 122508,
+    "unverified": 34367,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-23T14:24:56.346324+00:00"
+    "as_of": "2026-10-23T16:21:25.525665+00:00",
+    "error_breakdown": {
+      "user/union-champion:OPENAPI00004": 4645,
+      "character/basic:OPENAPI00003": 175,
+      "character/basic:OPENAPI00004": 909
+    }
   },
   "discovery_coverage": [
     {
@@ -66,6 +72,11 @@
       "limited": false
     }
   ],
+  "error_breakdown": {
+    "user/union-champion:OPENAPI00004": 4645,
+    "character/basic:OPENAPI00003": 175,
+    "character/basic:OPENAPI00004": 909
+  },
   "notes": [
     "All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.",
     "Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.",
