@@ -70,24 +70,29 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   }
   if(acc.inputRows!==counts.verified || !acc.total) throw Error('수집 완료 기록과 API 원본 행 수가 일치하지 않습니다.');
   const preset=acc.bases.has('preset');
-  const ownedAndroid=acc.scopes.has('presets-and-owned-android');
+  const cashPlus=acc.scopes.has('presets-owned-android-cash-plus');
+  const ownedAndroid=cashPlus||acc.scopes.has('presets-and-owned-android');
+  const scope=ownedAndroid?[...acc.scopes][0]:undefined;
   const combatOnly=acc.policies.has('exclude-training-presets-v1');
   if(combatOnly!==(progress.equipment_policy==='exclude-training-presets-v1'))throw Error('수집본과 사냥 프리셋 제외 기준이 다릅니다.');
-  if(ownedAndroid!==(progress.calculation_scope==='presets-and-owned-android'))throw Error('수집본과 안드로이드 장착 조합의 계산 기준이 다릅니다.');
+  if((scope||'stored-presets')!==(progress.calculation_scope||'stored-presets'))throw Error('수집본과 장착 조합의 계산 기준이 다릅니다.');
+  if(cashPlus!==(progress.cash_effect_policy==='cash-base-and-confirmed-plus-v1'))throw Error('수집본과 캐시 효과 계산 기준이 다릅니다.');
   if(preset !== (progress.basis==='preset')) throw Error('수집 기록의 계산 기준이 원본과 다릅니다.');
   const data=join(root,'data'),cache=join(data,'mystery-cache'); await mkdir(cache,{recursive:true});
   const updatedAt=new Date().toISOString();
   const collection={state:counts.pending||counts.collected?'collecting':'scanned',candidates:progress.candidates,
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
     outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
-    duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt};
+    duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt,
+    error_breakdown:Object.fromEntries(Object.entries(progress.error_breakdown||{}).filter(([k,v])=>/^(user\/union-champion|character\/basic):OPENAPI\d{5}$/.test(k)&&Number.isSafeInteger(v)&&v>=0))};
   const source=preset?`NEXON Open API · ${progress.api_mode==='dated'?'API 일일 기록 · ':''}${ownedAndroid?'프리셋·안드로이드':'프리셋'} 조합 계산`:'NEXON character/basic · character/stat API';
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
     combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
-    ...(ownedAndroid?{calculation_scope:'presets-and-owned-android'}:{}),
+    ...(ownedAndroid?{calculation_scope:scope}:{}),
+    ...(cashPlus?{cash_effect_policy:'cash-base-and-confirmed-plus-v1'}:{}),
     ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${ownedAndroid?'프리셋·안드로이드 조합':preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
-    limitations:[...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
+    limitations:[...(cashPlus?['캐시 개별 능력치는 실제 적용 슬롯으로 검산하며, API에 활성화가 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.']:[]),...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
       '이름 목록 확보에 사용한 랭킹 순위·레벨로 전투력 시상 순위를 결정하지 않습니다.',
       'API로 확인 불가능한 캐릭터와 후보 목록 밖 캐릭터가 있어 공식 전체 순위를 보장하지 않습니다.',
       ...(progress.api_mode==='dated'?['표시된 날짜의 API 일일 기록입니다. API는 분 단위 시점을 지정하지 않으며 정확한 23:59 스냅샷을 의미하지 않습니다.']:[]),
@@ -118,14 +123,16 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
     ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     ...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
-    ...(ownedAndroid?{calculation_scope:'presets-and-owned-android'}:{}),
-    value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination'+(ownedAndroid?' including confirmed owned compatible Android equip combinations':'')+(combatOnly?' excluding named training equipment presets':''):'character/stat final_stat[stat_name=전투력]'},
+    ...(ownedAndroid?{calculation_scope:scope}:{}),
+    ...(cashPlus?{cash_effect_policy:'cash-base-and-confirmed-plus-v1'}:{}),
+    value_basis:{name_world_job_level_image:'character/basic',combat:preset?'same-day API options, maximum verified equipment/hyper/ability/union preset combination'+(ownedAndroid?' including confirmed owned compatible Android equip combinations':'')+(cashPlus?' including confirmed Master Label Plus appearance choices; cash item stats from stat-bearing base slots only':'')+(combatOnly?' excluding named training equipment presets':''):'character/stat final_stat[stat_name=전투력]'},
     ranking_basis:preset?'calculated preset combat_power descending; exact equipped baseline validation required':'API combat_power descending; API basic level/job/world only',
     excluded_jobs:[...EXCLUDED_JOBS],
     candidate_discovery:'ranking/overall API for names only; includes level 289 as a date-boundary buffer',
     candidates:progress.candidates,candidate_groups:discovery.candidate_groups,per_level_candidate_cap:null,
     display_level_min:MIN_LEVEL,display_level_max:MAX_LEVEL,published_characters:acc.total,api_verified_groups:groups,
     collection,discovery_coverage:discovery.discovery_coverage,
+    error_breakdown:progress.error_breakdown||{},
     notes:[...(progress.api_mode==='dated'?['All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.']:[]),'Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
       'Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.',
       'Counts are a publication snapshot, not a live progress counter.']};

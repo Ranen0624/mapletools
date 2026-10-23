@@ -113,6 +113,23 @@ test('Xenon and Demon Avenger never enter any ranking scope',()=>{
   assert.throws(()=>filterRank(rows,{job:'제논'}),/집계에서 제외/);
   assert.throws(()=>filterRank(rows,{job:'데몬어벤져'}),/집계에서 제외/);
 });
+
+test('cash effects require a consistent v15 scope and survive local export',()=>{
+  const c={...calculation,version:'preset-api-v15',equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',
+    cash_plus:{preset:2,count:5},cash_set_adjustments:[{set:'레헬른 세트',before:4,after:0}],combinations:1350};
+  const s=prepareSnapshot([row(0,{calculation:c})]);
+  assert.equal(s.coverage.calculation_scope,c.configuration_scope);assert.equal(s.coverage.cash_effect_policy,c.cash_effect_policy);
+  assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+  for(const bad of [{...c,cash_effect_policy:undefined},{...c,configuration_scope:'presets-and-owned-android'},
+    {...c,version:'preset-api-v14',combinations:270},
+    {...c,cash_plus:{preset:4,count:5}},{...c,cash_plus:{preset:1,count:6}},{...c,combinations:1351},
+    {...c,cash_set_adjustments:[{set:'레헬른 세트',before:4,after:5}]}])assert.throws(()=>prepareSnapshot([row(0,{calculation:bad})]));
+  const older={...c,version:'preset-api-v14',configuration_scope:'presets-and-owned-android',cash_effect_policy:undefined,cash_plus:undefined,cash_set_adjustments:undefined,combinations:270};
+  assert.throws(()=>prepareSnapshot([row(0,{calculation:c}),row(1,{calculation:older})]),/계산 기준/);
+  assert.throws(()=>prepareSnapshot([row(0,{calculation:c})],{coverage:{cash_effect_policy:'unknown'}}),/캐시/);
+  assert.equal(prepareSnapshot([],{coverage:s.coverage}).coverage.cash_effect_policy,c.cash_effect_policy);
+});
 test('regular, Eos/Helios and unknown event worlds never share a podium',()=>{
   const rows=[row(0),row(1,{world:'에오스',combat:999}),row(2,{world:'핼리오스',combat:998}),row(3,{world:'챌린저스',combat:997})];
   assert.deepEqual(filterRank(rows).map(r=>r.world),['루나']);

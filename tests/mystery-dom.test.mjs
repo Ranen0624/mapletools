@@ -19,6 +19,19 @@ test('public empty page shows three uncollected places and no images or values',
   assert.match(d.getElementById('snapshot-date').textContent,/미수집/); assert.match(d.getElementById('data-status').textContent,/미수집/); dom.window.close();
 });
 
+test('cash combination details and dated lookup failures are visible without mixing appearance item stats',async()=>{
+  const calculation={basis:'preset',version:'preset-api-v15',api_combat:100,baseline_combat:100,observed_at:'2026-10-24T00:00:00+09:00',combinations:4,
+    presets:{equipment:1,hyper:1,ability:1,union:1},equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',cash_plus:{preset:2,count:5},cash_set_adjustments:[{set:'레헬른 세트',before:4,after:0}]};
+  const s={...core.prepareSnapshot([row(0,{combat:200,calculation})]),collection:{verified:1,pending:0,calculating:0,unverified:0,failed:5729,error_breakdown:{'user/union-champion:OPENAPI00004':4645,'character/basic:OPENAPI00004':909,'character/basic:OPENAPI00003':175}}};
+  const dom=await setup(s),d=dom.window.document;
+  assert.match(d.getElementById('snapshot-basis').textContent,/실제 적용 슬롯.*마스터라벨 전투 플러스/);
+  assert.match(d.getElementById('snapshot-basis').textContent,/유니온 챔피언 4,645명.*기본 정보 1,084명/);
+  d.querySelector('#podium-1 .name-button').click();await flush();
+  assert.match(d.getElementById('profile-facts').textContent,/5개 적용.*코디 프리셋 2/);
+  assert.match(d.getElementById('profile-facts').textContent,/레헬른 세트 \(4개, 효과 제외\)/);dom.window.close();
+});
+
 test('finished candidate lookup distinguishes calculation holds and API errors from active collection',async()=>{
   const s={...core.prepareSnapshot([row()]),collection:{state:'scanned',verified:1,candidates:4,pending:0,calculating:0,unverified:2,failed:1}};
   const dom=await setup(s),d=dom.window.document;
