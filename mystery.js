@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=20261024-combat15';
-import {loadRankingSource} from './mystery-source.js?v=20261024-combat15';
-import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat15';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=20261024-combat16';
+import {loadRankingSource} from './mystery-source.js?v=20261024-combat16';
+import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat16';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -74,9 +74,12 @@ function render() {
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
   if(c.equipment_policy==='exclude-training-presets-v1') $('snapshot-basis').textContent+=' 어비스 헌터스 링·정령의 펜던트가 있는 사냥 장비 프리셋은 제외합니다.';
   if(c.cash_effect_policy==='cash-base-and-confirmed-plus-v1') $('snapshot-basis').textContent+=' 캐시 능력치는 실제 적용 슬롯으로 계산하고, 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.';
-  const errors=snapshot.collection?.error_breakdown||{},championErrors=errors['user/union-champion:OPENAPI00004']||0;
+  const errors=snapshot.collection?.error_breakdown||{},championErrors=Object.entries(errors).filter(([key])=>key.startsWith('user/union-champion:')).reduce((n,[,count])=>n+count,0);
   const basicErrors=Object.entries(errors).filter(([key])=>key.startsWith('character/basic:')).reduce((n,[,count])=>n+count,0);
   if(championErrors||basicErrors)$('snapshot-basis').textContent+=` 날짜별 API 조회 불가: 유니온 챔피언 ${championErrors.toLocaleString('ko-KR')}명 · 기본 정보 ${basicErrors.toLocaleString('ko-KR')}명.`;
+  const emptyBasic=errors['character/basic:empty_snapshot']||0,idErrors=Object.entries(errors).filter(([key])=>key.startsWith('id:')).reduce((n,[,count])=>n+count,0);
+  if(emptyBasic)$('snapshot-basis').textContent+=` 기본 정보 중 ${emptyBasic.toLocaleString('ko-KR')}명은 기준일 응답의 캐릭터 항목이 비어 있습니다.`;
+  if(idErrors)$('snapshot-basis').textContent+=` 현재 캐릭터 식별정보 조회 불가 ${idErrors.toLocaleString('ko-KR')}명.`;
   const counts=snapshot.collection,collectionNotes=counts?[
     `전체 대기 ${(counts.pending||0).toLocaleString('ko-KR')}명`,
     ...(counts.calculating?[`계산 중 ${counts.calculating.toLocaleString('ko-KR')}명`]:[]),

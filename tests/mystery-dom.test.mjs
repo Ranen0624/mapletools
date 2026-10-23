@@ -42,6 +42,15 @@ test('finished candidate lookup distinguishes calculation holds and API errors f
   dom.window.close();
 });
 
+test('dated empty basic snapshots and identifier failures are reported separately from champion errors',async()=>{
+  const s={...core.prepareSnapshot([row()]),collection:{state:'scanned',verified:1,pending:0,calculating:0,unverified:0,failed:9,
+    error_breakdown:{'user/union-champion:OPENAPI00003':2,'user/union-champion:OPENAPI00004':3,'character/basic:empty_snapshot':1,'id:OPENAPI00004':3}}};
+  const dom=await setup(s),text=dom.window.document.getElementById('snapshot-basis').textContent;
+  assert.match(text,/유니온 챔피언 5명.*기본 정보 1명/);
+  assert.match(text,/1명은 기준일 응답의 캐릭터 항목이 비어/);
+  assert.match(text,/캐릭터 식별정보 조회 불가 3명/);dom.window.close();
+});
+
 test('fixed API daily records are labelled separately from legacy dates',async()=>{
   const s={...core.prepareSnapshot([row()],{coverage:{api_mode:'dated'}}),preferredApiMode:'dated',availableDates:['2026-10-20','2026-10-19'],availableDateModes:{'2026-10-20':'legacy','2026-10-19':'dated'}};
   const dom=await setup(s),d=dom.window.document;

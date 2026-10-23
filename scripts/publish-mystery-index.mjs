@@ -84,7 +84,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
     outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
     duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt,
-    error_breakdown:Object.fromEntries(Object.entries(progress.error_breakdown||{}).filter(([k,v])=>/^(user\/union-champion|character\/basic):OPENAPI\d{5}$/.test(k)&&Number.isSafeInteger(v)&&v>=0))};
+    error_breakdown:Object.fromEntries(Object.entries(progress.error_breakdown||{}).filter(([k,v])=>/^(?:(?:user\/union-champion|character\/basic|id):OPENAPI\d{5}|character\/basic:empty_snapshot)$/.test(k)&&Number.isSafeInteger(v)&&v>=0))};
   const source=preset?`NEXON Open API · ${progress.api_mode==='dated'?'API 일일 기록 · ':''}${ownedAndroid?'프리셋·안드로이드':'프리셋'} 조합 계산`:'NEXON character/basic · character/stat API';
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
     combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
