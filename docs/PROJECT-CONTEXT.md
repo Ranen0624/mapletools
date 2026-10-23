@@ -37,7 +37,7 @@ TOP 10 이름을 누르면 같은 수집본의 코디·기본 정보·전투력�
 
 운영용 작업 관리창과 API 수집·계산 소스는 별도 비공개 `private-collection/`에 있습니다. 필요한 이름은 `workbench.py`, `OPERATOR-NOTES.md`, `run_daily.py`, `collect_preset_sources.py`, `preset_combat.py`, `preset_batch.py`, `export_mystery_verified.py`, `export_character_details.py`, `audit_public.py`입니다. 이 파일들과 개발용 PC 프로그램 원본, 키·설정·서명 자료·수집 DB·로그는 공개 GitHub에 올리지 않습니다.
 
-이전 PC는 `private-collection-v3/`를 사용했습니다. 2026-10-23 재수집 PC에서는 별도 비공개 작업 폴더의 `preset-api-v15` 계산기를 사용하며, 이전 PC의 v12 소스를 확보했다고 가정하지 않습니다. 22일 후보와 날짜 고정 API 원본을 처음부터 다시 수집하고, 최종 규칙으로 전체 저장 원본을 네트워크 없이 재계산합니다. `preset_rebuild.py`, `rebuilt_combat_core.py`, `rebuild_rules.py`, `rebuild_batch.py`, `storage_retention.py`, `cash_effects.py`, 세트 분류 근거와 실패 요청 체크포인트도 비공개 자료입니다. 실제 연결은 해당 PC의 최신 비공개 운영 노트와 잠금으로 다시 확인합니다. 이전 DB를 이름만 바꾸거나 덮어써 새 수집기로 이전하지 않습니다. 22일 검증·공개를 20일·19일 재수집보다 우선합니다.
+이전 PC는 `private-collection-v3/`를 사용했습니다. 2026-10-23 재수집 PC에서는 별도 비공개 작업 폴더의 `preset-api-v16` 계산기를 사용하며, 이전 PC의 v12 소스를 확보했다고 가정하지 않습니다. 22일 후보와 날짜 고정 API 원본을 처음부터 다시 수집하고, 최종 규칙으로 전체 저장 원본을 네트워크 없이 재계산합니다. `preset_rebuild.py`, `rebuilt_combat_core.py`, `rebuild_rules.py`, `rebuild_batch.py`, `storage_retention.py`, `cash_effects.py`, 세트 분류 근거와 실패 요청 체크포인트도 비공개 자료입니다. 실제 연결은 해당 PC의 최신 비공개 운영 노트와 잠금으로 다시 확인합니다. 이전 DB를 이름만 바꾸거나 덮어써 새 수집기로 이전하지 않습니다. 22일 검증·공개를 20일·19일 재수집보다 우선합니다.
 
 비공개 도구가 연결돼 있다면 먼저 `workbench.py doctor`, `workbench.py status`로 실제 경로와 실행 중인 수집을 확인합니다. `machine_paths.py`는 현재 PC의 경로를 찾고 `MAPLETOOLS_WEBSITE`, `MAPLETOOLS_PROGRAM`, `MAPLETOOLS_NODE` 또는 비공개 `workbench-config.json`으로 지정할 수 있습니다. 이전 PC의 절대 경로는 가져오지 않습니다. 없는 자료는 없다고 보고하고, 가능한 홈페이지 작업은 현재 저장소에서 이어갑니다.
 
