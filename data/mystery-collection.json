@@ -14,34 +14,34 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 201031,
+  "candidates": 201054,
   "candidate_groups": {
-    "eos-helios": 12647,
-    "regular": 188384
+    "eos-helios": 12648,
+    "regular": 188406
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 123007,
+  "published_characters": 109290,
   "api_verified_groups": {
-    "regular": 115101,
-    "eos-helios": 7906
+    "regular": 102169,
+    "eos-helios": 7121
   },
   "collection": {
-    "state": "collecting",
-    "candidates": 201031,
-    "processed": 201031,
+    "state": "scanned",
+    "candidates": 201054,
+    "processed": 201054,
     "pending": 0,
-    "failed": 5005,
+    "failed": 5729,
     "skipped": 0,
-    "outside": 31874,
-    "unavailable": 6217,
-    "verified": 123007,
-    "unverified": 34928,
+    "outside": 31746,
+    "unavailable": 6186,
+    "verified": 109290,
+    "unverified": 48103,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-23T07:57:00.053397+00:00"
+    "as_of": "2026-10-23T12:38:44.608844+00:00"
   },
   "discovery_coverage": [
     {

@@ -73,7 +73,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   if(preset !== (progress.basis==='preset')) throw Error('수집 기록의 계산 기준이 원본과 다릅니다.');
   const data=join(root,'data'),cache=join(data,'mystery-cache'); await mkdir(cache,{recursive:true});
   const updatedAt=new Date().toISOString();
-  const collection={state:incomplete?'collecting':'scanned',candidates:progress.candidates,
+  const collection={state:counts.pending||counts.collected?'collecting':'scanned',candidates:progress.candidates,
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
     outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
     duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt};

@@ -10,6 +10,23 @@ import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
 const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:290+(i%11),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
 
+test('completed candidate attempts remain partial when API errors or calculation holds remain',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'mystery-attempted-'));
+  try{
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:''}));
+    await writeFile(input,JSON.stringify(rows[0]));
+    await writeFile(audit,JSON.stringify({data_date:date,candidates:3,counts:{verified:1,error:1,unverified:1}}));
+    const report=await publishIndex({input,audit,root,allowPartial:true});
+    assert.equal(report.collection.state,'scanned');assert.equal(report.collection.pending,0);
+    assert.equal(report.collection.failed,1);assert.equal(report.collection.unverified,1);
+    const publication=JSON.parse(await readFile(join(root,'data/mystery-collection.json'),'utf8'));
+    assert.equal(publication.publication_status,'interim');
+    const index=JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8'));
+    assert.equal(index.coverage.status,'partial');
+  }finally{assert(root.startsWith(join(tmpdir(),'mystery-attempted-')));await rm(root,{recursive:true,force:true});}
+});
+
 test('source-required publication rejects assumed ammo and preserves the hold notice for an empty job query',async()=>{
   const root=await mkdtemp(join(tmpdir(),'mystery-ammunition-'));
   try{
