@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION} from './mystery-core.js?v=20261024-combat16';
-import {loadRankingSource} from './mystery-source.js?v=20261024-combat16';
-import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat16';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION} from './mystery-core.js?v=20261024-combat17';
+import {loadRankingSource} from './mystery-source.js?v=20261024-combat17';
+import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat17';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -72,6 +72,7 @@ function render() {
   $('snapshot-progress').textContent=snapshot.collection?`${['presets-and-owned-android','presets-owned-android-cash-plus'].includes(c.calculation_scope)?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':`후보 조회 완료${snapshot.collection.unverified?' · 일부 검증 보류':''}${snapshot.collection.failed?' · 일부 조회 오류':''}`}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.')+(['presets-and-owned-android','presets-owned-android-cash-plus'].includes(c.calculation_scope)?' 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다.':'');
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
+  if(c.ammunition_policy===AMMUNITION_POLICY) $('snapshot-basis').textContent+=' '+AMMUNITION_ASSUMPTION;
   if(c.equipment_policy==='exclude-training-presets-v1') $('snapshot-basis').textContent+=' 어비스 헌터스 링·정령의 펜던트가 있는 사냥 장비 프리셋은 제외합니다.';
   if(c.cash_effect_policy==='cash-base-and-confirmed-plus-v1') $('snapshot-basis').textContent+=' 캐시 능력치는 실제 적용 슬롯으로 계산하고, 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.';
   const errors=snapshot.collection?.error_breakdown||{},championErrors=Object.entries(errors).filter(([key])=>key.startsWith('user/union-champion:')).reduce((n,[,count])=>n+count,0);
@@ -192,6 +193,10 @@ function showOutfit(character,trigger) {
   $('profile-power').textContent=character.combat.toLocaleString('ko-KR');
   $('profile-facts').replaceChildren(fact('월드',character.world),fact('직업',character.job),fact('레벨',String(character.level)),fact('기준일',character.observedAt));
   if(character.calculation)$('profile-facts').append(fact('API 착용 전투력',character.calculation.api_combat.toLocaleString('ko-KR')));
+  if(character.calculation?.ammunition) {
+    const a=character.calculation.ammunition;
+    $('profile-facts').append(fact('탄약 가정',`${a.name} · 공격력 +${a.attack} · 실제 보유 미확인`));
+  }
   if(character.calculation?.android) {
     const a=character.calculation.android;
     $('profile-facts').append(fact('안드로이드',a.name));
