@@ -19,6 +19,22 @@ test('public empty page shows three uncollected places and no images or values',
   assert.match(d.getElementById('snapshot-date').textContent,/미수집/); assert.match(d.getElementById('data-status').textContent,/미수집/); dom.window.close();
 });
 
+test('v18 API fallback and assumed preset winners show their distinct source and comparison values',async()=>{
+  for(const candidate of [null,80,120]) {
+    const calculation={basis:'preset',version:'preset-api-v18',api_combat:100,baseline_combat:90,baseline_status:'mismatch',
+      observed_at:'2026-10-24T00:00:00Z',selection_policy:core.SELECTION_POLICY,selected_source:candidate>100?'preset':'api',
+      preset_combat:candidate,presets:candidate===null?null:{equipment:2,hyper:1,ability:1,union:1},combinations:candidate===null?0:1,search_complete:false,
+      review_reasons:['baseline_mismatch'],equipment_policy:'exclude-training-presets-v1',active_equipment_preset:null,excluded_equipment_presets:[],
+      configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:core.AMMUNITION_POLICY};
+    const dom=await setup(core.prepareSnapshot([row(0,{combat:Math.max(100,candidate??0),calculation})])),d=dom.window.document;
+    assert.match(d.getElementById('snapshot-basis').textContent,/API 착용 전투력과 계산 가능한 프리셋/);
+    d.querySelector('#podium-1 .name-button').click();await flush();
+    assert.match(d.getElementById('profile-facts').textContent,/API 착용 전투력100/);
+    assert.match(d.getElementById('profile-facts').textContent,candidate===null?/계산 가능한 조합 없음/:new RegExp('프리셋 계산값'+candidate));
+    assert.match(d.getElementById('profile-power-label').textContent,candidate>100?/가정 프리셋/:/API 착용/);dom.window.close();
+  }
+});
+
 test('maximum projectile policy and unconfirmed inventory are visible in ranking and character details',async()=>{
   const calculation={basis:'preset',version:'preset-api-v17',api_combat:100,baseline_combat:100,observed_at:'2026-10-24T00:00:00Z',combinations:1,
     equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
