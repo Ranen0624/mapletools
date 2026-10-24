@@ -6,10 +6,10 @@ import {createHash} from 'node:crypto';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeHistory} from './mystery-history.mjs';
-import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION} from '../mystery-core.js';
+import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION} from '../mystery-core.js';
 
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
-const requiresAmmoSource=version=>Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1])>=11;
+const requiresAmmoSource=version=>{const n=Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1]);return n>=11&&n<17;};
 export function queryAccumulator(date) {
   const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(),policies=new Set(); let inputRows=0,scopeExcluded=0;
   function add(raw) {
@@ -63,8 +63,11 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const incomplete=!!(counts.pending||counts.collected||counts.error||counts.unverified);
   if(incomplete&&!allowPartial) throw Error('전체 후보 API 검증과 오류 재확인이 끝난 작업만 공개할 수 있습니다. 중간 공개는 --allow-partial을 명시하세요.');
   const acc=queryAccumulator(progress.data_date);
+  const maximumAmmo=Number(/^preset-api-v(\d+)$/.exec(String(progress.calculator_version))?.[1])>=17;
+  if(maximumAmmo&&progress.ammunition_policy!==AMMUNITION_POLICY)throw Error('탄약 가정 정책을 확인하세요.');
   for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})) if(line.trim()) {
     const raw=JSON.parse(line);
+    if(maximumAmmo&&normalizeCharacter(raw)?.calculation?.ammunition_policy!==AMMUNITION_POLICY)throw Error('캐릭터와 수집본의 탄약 가정 기준이 다릅니다.');
     if((requiresAmmoSource(progress.calculator_version)||requiresAmmoSource(raw.calculation?.version)) && AMMUNITION_JOBS.includes(normalizeCharacter(raw)?.job)) throw Error('사용 탄약의 독립 근거가 없는 계산 기록은 공개할 수 없습니다.');
     acc.add(raw);
   }
@@ -90,6 +93,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     combat_basis:preset?'preset':'equipped',excluded_jobs:[...EXCLUDED_JOBS],...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     ...(ownedAndroid?{calculation_scope:scope}:{}),
     ...(cashPlus?{cash_effect_policy:'cash-base-and-confirmed-plus-v1'}:{}),
+    ...(maximumAmmo?{ammunition_policy:AMMUNITION_POLICY}:{}),
     ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${ownedAndroid?'프리셋·안드로이드 조합':preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
     limitations:[...(cashPlus?['캐시 개별 능력치는 실제 적용 슬롯으로 검산하며, API에 활성화가 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.']:[]),...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
@@ -99,7 +103,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
       ...(preset?['같은 기준일의 실제 API 장비·하이퍼·어빌리티·유니온 조합을 계산했습니다. 착용 전투력 검산과 프리셋 확인을 통과한 기록만 포함합니다.',`계산 검증 보류 ${collection.unverified.toLocaleString('ko-KR')}명은 순위에 포함하지 않습니다.`]:[]),
       ...(ownedAndroid?['API에서 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다. 현재 착용 전투력과 다를 수 있으며 필요한 장착은 캐릭터 상세에 표시합니다.']:[]),
       ...(combatOnly?['어비스 헌터스 링·어비스 헌터 링·정령의 펜던트·스페셜 정령의 펜던트가 있는 장비 프리셋은 사냥 세팅으로 제외합니다. 현재 착용 프리셋이 제외되면 계산 전투력이 착용 전투력보다 낮을 수 있습니다.']:[]),
-      ...(requiresAmmoSource(progress.calculator_version)?[AMMUNITION_LIMITATION]:[]),
+      ...(maximumAmmo?[AMMUNITION_ASSUMPTION]:requiresAmmoSource(progress.calculator_version)?[AMMUNITION_LIMITATION]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {
@@ -121,6 +125,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   else await writeFile(join(data,'mystery-index.json'),JSON.stringify(index,null,2)+'\n');
   const groups=Object.fromEntries([...acc.queries.values()].filter(q=>!q.world&&!q.job).map(q=>[q.group,[...q.counts.values()].reduce((a,b)=>a+b,0)]));
   const report={schema_version:1,data_date:progress.data_date,publication_status:incomplete?'interim':'scanned',
+    ...(maximumAmmo?{ammunition_policy:AMMUNITION_POLICY}:{}),
     ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     ...(['dated','live'].includes(progress.api_mode)?{api_mode:progress.api_mode}:{}),
     ...(ownedAndroid?{calculation_scope:scope}:{}),
@@ -133,7 +138,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     display_level_min:MIN_LEVEL,display_level_max:MAX_LEVEL,published_characters:acc.total,api_verified_groups:groups,
     collection,discovery_coverage:discovery.discovery_coverage,
     error_breakdown:progress.error_breakdown||{},
-    notes:[...(progress.api_mode==='dated'?['All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.']:[]),'Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
+    notes:[...(maximumAmmo?['Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. Exact equipped baseline and all other preset checks remain required.']:[]),...(progress.api_mode==='dated'?['All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.']:[]),'Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.',
       'Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.',
       'Counts are a publication snapshot, not a live progress counter.']};
   const catalog=archive?JSON.parse(await readFile(join(data,'mystery-dates.json'),'utf8')):null;

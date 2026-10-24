@@ -4,10 +4,26 @@ import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
-import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup,AMMUNITION_LIMITATION,ammunitionHoldNotice} from '../mystery-core.js';
+import {emptySnapshot,prepareSnapshot,validateSnapshot,parseImport,filterRank,imageAllowed,collectionStatus,snapshotCSV,validDate,MAX_CSV_BYTES,worldGroup,AMMUNITION_LIMITATION,ammunitionHoldNotice,AMMUNITION_POLICY} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 import {importFile} from '../scripts/import-mystery.mjs';
 const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:290+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
+
+test('maximum-projectile assumptions survive CSV and reject false inventory claims or lower attack',()=>{
+  const c={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:1,ability:1,union:1},
+    version:'preset-api-v17',observed_at:'2026-10-24T00:00:00Z',combinations:1,
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',
+    ammunition_policy:AMMUNITION_POLICY,ammunition:{name:'플레임 표창',attack:29,inventory_confirmed:false}};
+  const s=prepareSnapshot([row(0,{job:'나이트로드',calculation:c})]);
+  assert.equal(s.coverage.ammunition_policy,AMMUNITION_POLICY);
+  assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+  assert.throws(()=>filterRank([s.characters[0],row(1,{job:'나이트로드',calculation:{...c,version:'preset-api-v16',ammunition:undefined,ammunition_policy:undefined}})]),/탄약/);
+  for(const bad of [{...c,ammunition:undefined},{...c,ammunition_policy:undefined},
+    {...c,ammunition:{...c.ammunition,attack:27}},{...c,ammunition:{...c.ammunition,inventory_confirmed:true}}])
+    assert.throws(()=>prepareSnapshot([row(0,{job:'나이트로드',calculation:bad})]));
+  assert.throws(()=>prepareSnapshot([row(0,{job:'나이트로드',calculation:c})],{coverage:{ammunition_policy:'unknown'}}),/탄약/);
+});
 
 test('ammunition holds explain missing API evidence only for the flagged public preset snapshot',()=>{
   const coverage={combat_basis:'preset',limitations:[AMMUNITION_LIMITATION]};

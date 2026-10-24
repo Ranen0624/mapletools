@@ -5,10 +5,34 @@ import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {queryAccumulator,publishIndex,discoveryMetadata} from '../scripts/publish-mystery-index.mjs';
-import {filterRank,snapshotCSV,AMMUNITION_LIMITATION,ammunitionHoldNotice} from '../mystery-core.js';
+import {filterRank,snapshotCSV,AMMUNITION_LIMITATION,ammunitionHoldNotice,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION} from '../mystery-core.js';
 import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
 const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:290+(i%11),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
+
+test('maximum-projectile publication requires explicit policy and exposes assumption without a hold notice',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'mystery-max-ammunition-'));
+  try {
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:''}));
+    const calculation={basis:'preset',version:'preset-api-v17',api_combat:100,baseline_combat:100,observed_at:'2026-10-24T00:00:00Z',combinations:1,
+      equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
+      presets:{equipment:1,hyper:1,ability:1,union:1},configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',
+      ammunition_policy:AMMUNITION_POLICY,ammunition:{name:'자이언트 불릿',attack:22,inventory_confirmed:false}};
+    const progress={data_date:date,candidates:1,counts:{verified:1},calculator_version:'preset-api-v17',basis:'preset',
+      equipment_policy:'exclude-training-presets-v1',
+      calculation_scope:calculation.configuration_scope,cash_effect_policy:calculation.cash_effect_policy};
+    await writeFile(input,JSON.stringify({...rows[0],job:'캡틴',combat:100,calculation}));await writeFile(audit,JSON.stringify(progress));
+    await assert.rejects(publishIndex({input,audit,root}),/탄약/);
+    progress.ammunition_policy=AMMUNITION_POLICY;await writeFile(audit,JSON.stringify(progress));
+    await publishIndex({input,audit,root});
+    const index=JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8'));
+    assert.equal(index.coverage.ammunition_policy,AMMUNITION_POLICY);
+    assert(index.coverage.limitations.includes(AMMUNITION_ASSUMPTION));
+    assert(!index.coverage.limitations.includes(AMMUNITION_LIMITATION));
+    assert.equal(ammunitionHoldNotice(index.coverage,'캡틴'),'');
+  } finally {await rm(root,{recursive:true,force:true});}
+});
 
 test('completed candidate attempts remain partial when API errors or calculation holds remain',async()=>{
   const root=await mkdtemp(join(tmpdir(),'mystery-attempted-'));
