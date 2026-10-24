@@ -22,6 +22,7 @@ test('v18 publication accepts API-only and mismatching calculated winners under 
       review_reasons:['baseline_unavailable']};
     const data=[{...rows[0],combat:100,calculation:{...common,selected_source:'api',preset_combat:null,presets:null,combinations:0,search_complete:false}},
       {...rows[1],combat:150,calculation:{...common,selected_source:'preset',preset_combat:150,presets:{equipment:2,hyper:1,ability:1,union:1},combinations:1,search_complete:true}}];
+    data[0].calculation.api_fallback={policy:'dated-partial-api-v1',failed_endpoint:'user/union-champion',error_code:'OPENAPI00004',equipment_verified:false};
     await writeFile(input,data.map(r=>JSON.stringify(r)).join('\n'));
     const p={data_date:date,candidates:2,counts:{verified:2},calculator_version:'preset-api-v18',basis:'preset',
       equipment_policy:common.equipment_policy,calculation_scope:common.configuration_scope,cash_effect_policy:common.cash_effect_policy,ammunition_policy:AMMUNITION_POLICY};
@@ -30,6 +31,9 @@ test('v18 publication accepts API-only and mismatching calculated winners under 
     const index=JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8'));
     assert.equal(index.coverage.selection_policy,common.selection_policy);
     assert.deepEqual(index.collection.selected_sources,{api:1,preset:1});
+    assert.equal(index.collection.api_only_from_partial,1);
+    assert(index.coverage.limitations.some(v=>v.includes('장비·사냥 세팅과 코디 착용 목록은 미확인')));
+    const acc=queryAccumulator(date);acc.add(data[0]);acc.add(data[0]);assert.equal(acc.apiFallbackCount,1);
     assert(index.coverage.limitations.some(v=>v.includes('프리셋 계산 불가 시 실제 API 착용값')));
   } finally {await rm(root,{recursive:true,force:true});}
 });

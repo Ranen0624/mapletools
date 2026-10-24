@@ -58,3 +58,13 @@ test('personal CSV keeps old dates separate while the public importer still reje
   assert.equal(dates[0].characters[0].combat,200);assert.equal(dates[1].characters[0].combat,100);assert.throws(()=>parseImport(csv),/동일한 기준일/);
   assert.throws(()=>parseLocalImport(csv.replace('2020-01-01','2020-02-30')),/기준일/);
 });
+
+
+test('uncollected outfit items permit an explicitly unknown response time without inventing a timestamp',async()=>{
+ const unknown={...detail,observed_at:null,cash_preset:null,outfit_source:'unavailable',items:[]};
+ assert.deepEqual(normalizeDetail(unknown),unknown);
+ assert.equal(normalizeDetail({...unknown,outfit_source:'base'}),null);
+ assert.equal(normalizeDetail({...unknown,items:detail.items}),null);
+ const packed={schema_version:1,date,encoding:'gzip-base64',payload:gzipSync(JSON.stringify([unknown])).toString('base64')};
+ assert.deepEqual(await decodeDetailPool(packed,date,1),[unknown]);
+});

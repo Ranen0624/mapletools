@@ -26,35 +26,35 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 157154,
+  "published_characters": 161422,
   "api_verified_groups": {
-    "regular": 146412,
-    "eos-helios": 10742
+    "regular": 150559,
+    "eos-helios": 10863
   },
   "collection": {
     "state": "scanned",
     "candidates": 201054,
     "processed": 201054,
     "pending": 0,
-    "failed": 5360,
+    "failed": 1092,
     "skipped": 0,
     "outside": 31746,
     "unavailable": 6794,
-    "verified": 157154,
+    "verified": 161422,
     "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-24T01:51:41.916566+00:00",
+    "as_of": "2026-10-24T02:57:24.147495+00:00",
     "selected_sources": {
-      "api": 38423,
+      "api": 42691,
       "preset": 118731
     },
+    "api_only_from_partial": 4268,
     "error_breakdown": {
-      "user/union-champion:OPENAPI00004": 4268,
-      "id:OPENAPI00004": 164,
-      "character/basic:empty_snapshot": 909,
       "character/basic:OPENAPI00004": 11,
+      "character/basic:empty_snapshot": 909,
+      "id:OPENAPI00004": 164,
       "user/union-champion:OPENAPI00003": 8
     }
   },
@@ -81,10 +81,9 @@
     }
   ],
   "error_breakdown": {
-    "user/union-champion:OPENAPI00004": 4268,
-    "id:OPENAPI00004": 164,
-    "character/basic:empty_snapshot": 909,
     "character/basic:OPENAPI00004": 11,
+    "character/basic:empty_snapshot": 909,
+    "id:OPENAPI00004": 164,
     "user/union-champion:OPENAPI00003": 8
   },
   "notes": [
