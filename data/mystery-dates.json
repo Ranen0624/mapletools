@@ -4,9 +4,9 @@
   "dates": [
     {
       "date": "2026-10-22",
-      "index": "data/mystery-history/2026-10-22/2cb970fb220d86d88ae57e2566c03e630c08a699349087877484375f1dcf9159.json",
-      "verified": 138640,
-      "updated_at": "2026-10-24T00:09:03.588Z",
+      "index": "data/mystery-history/2026-10-22/a63f9ef71ac4db0d8f5e60b6b205bb80abab553ecd0ffba40e75cf065b0ecf76.json",
+      "verified": 157154,
+      "updated_at": "2026-10-24T01:51:48.699Z",
       "api_mode": "dated"
     },
     {
@@ -29,6 +29,6 @@
       "updated_at": "2026-10-20T07:38:27.094Z"
     }
   ],
-  "latest_dated": "2026-10-22",
-  "retention_days": 7
+  "retention_days": 7,
+  "latest_dated": "2026-10-22"
 }

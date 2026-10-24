@@ -10,6 +10,30 @@ import {loadRankingSource} from '../mystery-source.js';
 const date='2026-10-19';
 const rows=Array.from({length:640},(_,i)=>({name:'검증전용'+i,world:['루나','스카니아','에오스','핼리오스'][i%4],job:['아델','비숍','렌'][i%3],level:290+(i%11),combat:(i*7919)%997+1,image:'',observedAt:date,ocid:'validation'+i}));
 
+test('v18 publication accepts API-only and mismatching calculated winners under one explicit policy',async()=>{
+  const root=await mkdtemp(join(tmpdir(),'mystery-api-preset-max-'));
+  try {
+    const input=join(root,'input.jsonl'),audit=join(root,'audit.json');
+    await writeFile(join(root,'mystery-config.json'),JSON.stringify({apiBase:''}));
+    const common={basis:'preset',version:'preset-api-v18',api_combat:100,baseline_combat:null,baseline_status:'unavailable',
+      observed_at:'2026-10-24T00:00:00Z',selection_policy:'api-or-calculated-maximum-v1',
+      equipment_policy:'exclude-training-presets-v1',active_equipment_preset:null,excluded_equipment_presets:[],
+      configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:AMMUNITION_POLICY,
+      review_reasons:['baseline_unavailable']};
+    const data=[{...rows[0],combat:100,calculation:{...common,selected_source:'api',preset_combat:null,presets:null,combinations:0,search_complete:false}},
+      {...rows[1],combat:150,calculation:{...common,selected_source:'preset',preset_combat:150,presets:{equipment:2,hyper:1,ability:1,union:1},combinations:1,search_complete:true}}];
+    await writeFile(input,data.map(r=>JSON.stringify(r)).join('\n'));
+    const p={data_date:date,candidates:2,counts:{verified:2},calculator_version:'preset-api-v18',basis:'preset',
+      equipment_policy:common.equipment_policy,calculation_scope:common.configuration_scope,cash_effect_policy:common.cash_effect_policy,ammunition_policy:AMMUNITION_POLICY};
+    await writeFile(audit,JSON.stringify(p));await assert.rejects(publishIndex({input,audit,root}),/선택 정책/);
+    p.selection_policy=common.selection_policy;await writeFile(audit,JSON.stringify(p));await publishIndex({input,audit,root});
+    const index=JSON.parse(await readFile(join(root,'data/mystery-index.json'),'utf8'));
+    assert.equal(index.coverage.selection_policy,common.selection_policy);
+    assert.deepEqual(index.collection.selected_sources,{api:1,preset:1});
+    assert(index.coverage.limitations.some(v=>v.includes('프리셋 계산 불가 시 실제 API 착용값')));
+  } finally {await rm(root,{recursive:true,force:true});}
+});
+
 test('maximum-projectile publication requires explicit policy and exposes assumption without a hold notice',async()=>{
   const root=await mkdtemp(join(tmpdir(),'mystery-max-ammunition-'));
   try {
