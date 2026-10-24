@@ -2,6 +2,7 @@
   "schema_version": 1,
   "data_date": "2026-10-22",
   "publication_status": "interim",
+  "selection_policy": "api-or-calculated-maximum-v1",
   "ammunition_policy": "maximum-projectile-assumed-v1",
   "equipment_policy": "exclude-training-presets-v1",
   "api_mode": "dated",
@@ -9,9 +10,9 @@
   "cash_effect_policy": "cash-base-and-confirmed-plus-v1",
   "value_basis": {
     "name_world_job_level_image": "character/basic",
-    "combat": "same-day API options, maximum verified equipment/hyper/ability/union preset combination including confirmed owned compatible Android equip combinations including confirmed Master Label Plus appearance choices; cash item stats from stat-bearing base slots only excluding named training equipment presets"
+    "combat": "max(same-day character/stat API combat power, calculable assumed equipment/hyper/ability/union/Android/cash preset combinations); no fitted stat residuals; missing preset options remain uncomputed"
   },
-  "ranking_basis": "calculated preset combat_power descending; exact equipped baseline validation required",
+  "ranking_basis": "max(actual same-day API equipped combat power, calculable assumed preset combat power); API wins ties; unavailable presets remain uncomputed",
   "excluded_jobs": [
     "제논",
     "데몬어벤져"
@@ -25,10 +26,10 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 138640,
+  "published_characters": 157154,
   "api_verified_groups": {
-    "regular": 129413,
-    "eos-helios": 9227
+    "regular": 146412,
+    "eos-helios": 10742
   },
   "collection": {
     "state": "scanned",
@@ -39,12 +40,16 @@
     "skipped": 0,
     "outside": 31746,
     "unavailable": 6794,
-    "verified": 138640,
-    "unverified": 18514,
+    "verified": 157154,
+    "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-24T00:06:59.636775+00:00",
+    "as_of": "2026-10-24T01:51:41.916566+00:00",
+    "selected_sources": {
+      "api": 38423,
+      "preset": 118731
+    },
     "error_breakdown": {
       "user/union-champion:OPENAPI00004": 4268,
       "id:OPENAPI00004": 164,
@@ -83,9 +88,9 @@
     "user/union-champion:OPENAPI00003": 8
   },
   "notes": [
-    "Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. Exact equipped baseline and all other preset checks remain required.",
+    "Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. API CP is unchanged and compared with calculable assumed presets; exact baseline agreement is not required.",
     "All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.",
-    "Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.",
+    "Interim rankings compare published API-backed records as of collection.as_of; pending candidates are not included.",
     "Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.",
     "Counts are a publication snapshot, not a live progress counter."
   ]

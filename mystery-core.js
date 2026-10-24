@@ -10,6 +10,8 @@ export const AMMUNITION_POLICY = 'maximum-projectile-assumed-v1';
 export const AMMUNITION_MAXIMUM = Object.freeze(Object.fromEntries(AMMUNITION_JOBS.map(job=>[job,
   job==='캡틴'?{name:'자이언트 불릿',attack:22}:['나이트로드','나이트워커'].includes(job)?{name:'플레임 표창',attack:29}:{name:'티타늄 화살',attack:9}])));
 export const AMMUNITION_ASSUMPTION = '화살 +9·표창 +29·불릿 +22의 최고 공격력 탄약 보유를 가정합니다. 실제 인벤토리 보유 확인값이 아닙니다.';
+export const SELECTION_POLICY = 'api-or-calculated-maximum-v1';
+export const SELECTION_NOTICE = 'API 착용 전투력과 계산 가능한 프리셋의 가정 전투력을 비교해 높은 값을 사용합니다. 계산할 수 없는 프리셋이 있으면 확인 가능한 범위로 비교합니다.';
 export function ammunitionHoldNotice(coverage,job,{local=false}={}) {
   return !local && coverage?.combat_basis==='preset' && coverage?.limitations?.includes(AMMUNITION_LIMITATION) && AMMUNITION_JOBS.includes(job)
     ? '사용 탄약을 API에서 확인할 수 없어 조합 전투력 검증을 보류했습니다. 탄약을 임의로 가정해 순위를 표시하지 않습니다.' : '';
@@ -64,7 +66,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
   const level = Number(levelText), combat = Number(combatText.replaceAll(',', ''));
   const observedAt = String(get('date') || fallbackDate).trim();
   if (!name || !world || !job || level < MIN_LEVEL || level > MAX_LEVEL ||
-      !Number.isSafeInteger(combat) || combat <= 0 || !validDate(observedAt)) return null;
+      !Number.isSafeInteger(combat) || combat < 0 || !validDate(observedAt)) return null;
   const rawImage = String(get('image')).trim(), image = imageAllowed(rawImage);
   if (rawImage && !image) return null;
   let calculation;
@@ -72,25 +74,43 @@ export function normalizeCharacter(row, fallbackDate = '') {
     let c=row.calculation;
     if(typeof c==='string') { try {c=JSON.parse(c);} catch {return null;} }
     const p=c?.presets;
+    const modern=Number(/^preset-api-v(\d+)$/.exec(String(c?.version))?.[1])>=18;
+    const power=v=>Number.isSafeInteger(v)&&v>=0;
+    const validPresets=p&&['equipment','hyper','ability','union'].every(k=>Number.isInteger(p[k])&&p[k]>=1&&p[k]<=(k==='union'?10:3));
     const policy=c?.equipment_policy,excluded=c?.excluded_equipment_presets;
     const trainingNames=new Set(['어비스 헌터 링','어비스 헌터스 링','정령의 펜던트','스페셜 정령의 펜던트']);
     let activeTraining=false;
     if(policy!==undefined || Number(/^preset-api-v(\d+)$/.exec(String(c?.version))?.[1])>=14) {
-      if(policy!=='exclude-training-presets-v1' || !Number.isInteger(c?.active_equipment_preset) || c.active_equipment_preset<1 || c.active_equipment_preset>3 ||
-          !Array.isArray(excluded)||excluded.length>2 || new Set(excluded.map(r=>r?.preset)).size!==excluded.length ||
+      if(policy!=='exclude-training-presets-v1' || (!(modern&&c.active_equipment_preset===null)&&(!Number.isInteger(c?.active_equipment_preset) || c.active_equipment_preset<1 || c.active_equipment_preset>3)) ||
+          !Array.isArray(excluded)||excluded.length>(modern?3:2) || new Set(excluded.map(r=>r?.preset)).size!==excluded.length ||
           excluded.some(r=>!Number.isInteger(r?.preset)||r.preset<1||r.preset>3||!Array.isArray(r.items)||!r.items.length||r.items.some(name=>!trainingNames.has(name))) ||
           excluded.some(r=>r.preset===p?.equipment))return null;
       activeTraining=excluded.some(r=>r.preset===c.active_equipment_preset);
     }
-    if(!c || c.basis!=='preset' || !Number.isSafeInteger(c.api_combat) || c.api_combat<=0 ||
-        c.baseline_combat!==c.api_combat || (combat<c.api_combat&&!activeTraining) || !p ||
-        ['equipment','hyper','ability','union'].some(k=>!Number.isInteger(p[k])||p[k]<1||p[k]>(k==='union'?10:3)) ||
-        !Number.isInteger(c.combinations)||c.combinations<1||c.combinations>(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15?1350:270) ||
+    if(!c || c.basis!=='preset' || !power(c.api_combat) || (!modern&&c.api_combat===0) ||
+        (!modern&&(c.baseline_combat!==c.api_combat || (combat<c.api_combat&&!activeTraining) || !validPresets)) ||
+        !Number.isInteger(c.combinations)||c.combinations<(modern?0:1)||c.combinations>(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15?1350:270) ||
         typeof c.version!=='string'||!/^preset-api-v\d+$/.test(c.version)||
         typeof c.observed_at!=='string'||!/^\d{4}-\d{2}-\d{2}T/.test(c.observed_at)||Number.isNaN(Date.parse(c.observed_at))) return null;
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
-      presets:Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])),
+      presets:p?Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])):null,
       version:c.version,observed_at:c.observed_at,combinations:c.combinations};
+    if(modern) {
+      const candidate=c.preset_combat,available=candidate!==null;
+      const expected=available&&candidate>c.api_combat?'preset':'api';
+      const reasons=new Set(['baseline_unavailable','baseline_mismatch','source_warning','preset_incomplete','preset_unavailable','calculator_failure']);
+      if(c.selection_policy!==SELECTION_POLICY || (!power(candidate)&&candidate!==null) ||
+          (!power(c.baseline_combat)&&c.baseline_combat!==null) ||
+          (available?(!validPresets||c.combinations<1):(p!==null||c.combinations!==0)) ||
+          c.selected_source!==expected || combat!==Math.max(c.api_combat,candidate??0) ||
+          c.baseline_status!==(c.baseline_combat===null?'unavailable':c.baseline_combat===c.api_combat?'matched':'mismatch') ||
+          typeof c.search_complete!=='boolean' || (!available&&c.search_complete) ||
+          !Array.isArray(c.review_reasons)||c.review_reasons.length>6||new Set(c.review_reasons).size!==c.review_reasons.length||c.review_reasons.some(v=>!reasons.has(v)) ||
+          (c.search_complete&&c.review_reasons.includes('preset_incomplete')) ||
+          (expected==='api'&&(c.android!==undefined||c.cash_plus!==undefined)))return null;
+      Object.assign(calculation,{selection_policy:SELECTION_POLICY,selected_source:expected,preset_combat:candidate,
+        baseline_status:c.baseline_status,search_complete:c.search_complete,review_reasons:[...c.review_reasons]});
+    } else if(c.selection_policy!==undefined||c.selected_source!==undefined||c.preset_combat!==undefined)return null;
     if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=17) {
       if(c.ammunition_policy!==AMMUNITION_POLICY)return null;
       calculation.ammunition_policy=AMMUNITION_POLICY;
@@ -125,6 +145,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
       }
     } else if(c.cash_effect_policy!==undefined||c.cash_plus!==undefined||c.cash_set_adjustments!==undefined)return null;
   }
+  if(combat===0&&calculation?.selection_policy!==SELECTION_POLICY)return null;
   return {name,world,job,level,combat,image,observedAt,ocid:clean(get('ocid')),...(calculation?{calculation}:{})};
 }
 export function uniqueCharacters(rows) {
@@ -165,6 +186,7 @@ export function filterRank(rows, options = {}) {
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.configuration_scope||'stored-presets')).size>1)throw Error('안드로이드 장착 조합의 계산 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.equipment_policy||'all-presets')).size>1)throw Error('사냥 프리셋 제외 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.ammunition_policy||'legacy')).size>1)throw Error('탄약 가정 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
+  if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.selection_policy||'legacy')).size>1)throw Error('API·계산 최댓값 선택 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   return uniqueCharacters(rows).filter(r => !jobExcluded(r.job) && r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
@@ -190,6 +212,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const scopes=new Set(characters.map(r=>r.calculation?.configuration_scope||'stored-presets'));
   const policies=new Set(characters.map(r=>r.calculation?.equipment_policy||'all-presets'));
   const ammoPolicies=new Set(characters.map(r=>r.calculation?.ammunition_policy||'legacy'));
+  const selections=new Set(characters.map(r=>r.calculation?.selection_policy||'legacy'));
+  if(selections.size>1||(coverage.selection_policy!==undefined&&coverage.selection_policy!==SELECTION_POLICY)||
+      (coverage.selection_policy&&selections.size&&!selections.has(coverage.selection_policy)))throw Error('API·계산 최댓값 선택 기준이 일치하지 않습니다.');
   if(ammoPolicies.size>1||(coverage.ammunition_policy!==undefined&&coverage.ammunition_policy!==AMMUNITION_POLICY)||
       (coverage.ammunition_policy&&ammoPolicies.size&&!ammoPolicies.has(coverage.ammunition_policy)))throw Error('탄약 가정의 계산 기준이 일치하지 않습니다.');
   if(coverage.cash_effect_policy!==undefined && (coverage.cash_effect_policy!==CASH_EFFECT_POLICY||coverage.calculation_scope!==CASH_SCOPE||(scopes.size&&!scopes.has(CASH_SCOPE))))throw Error('캐시 효과의 계산 기준이 일치하지 않습니다.');
@@ -217,6 +242,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     ...(coverage.calculation_scope||[...scopes].some(s=>calculationScopes.has(s))?{calculation_scope:coverage.calculation_scope||[...scopes][0]}:{}),
     ...(scopes.has(CASH_SCOPE)||coverage.cash_effect_policy===CASH_EFFECT_POLICY?{cash_effect_policy:CASH_EFFECT_POLICY}:{}),
     ...(ammoPolicies.has(AMMUNITION_POLICY)||coverage.ammunition_policy===AMMUNITION_POLICY?{ammunition_policy:AMMUNITION_POLICY}:{}),
+    ...(selections.has(SELECTION_POLICY)||coverage.selection_policy===SELECTION_POLICY?{selection_policy:SELECTION_POLICY}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }

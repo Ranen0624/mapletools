@@ -9,6 +9,26 @@ import {loadRankingSource} from '../mystery-source.js';
 import {importFile} from '../scripts/import-mystery.mjs';
 const row=(n=0,extra={})=>({name:'검증전용'+n,world:'루나',job:'아델',level:290+n,combat:100+n,image:'',observedAt:'2026-10-19',...extra});
 
+test('v18 selects the exact max of API and assumed presets, preserving mismatch and API-only zero through CSV',()=>{
+  const make=(api,candidate)=>({basis:'preset',version:'preset-api-v18',observed_at:'2026-10-24T00:00:00Z',
+    api_combat:api,preset_combat:candidate,baseline_combat:90,baseline_status:api===90?'matched':'mismatch',
+    selection_policy:'api-or-calculated-maximum-v1',selected_source:candidate!==null&&candidate>api?'preset':'api',
+    search_complete:candidate!==null,review_reasons:[],presets:candidate===null?null:{equipment:2,hyper:1,ability:1,union:1},combinations:candidate===null?0:1,
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:null,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:AMMUNITION_POLICY});
+  for(const [api,candidate] of [[100,120],[120,100],[100,100],[0,null],[0,120]]) {
+    const c=make(api,candidate),combat=Math.max(api,candidate??0);
+    const s=prepareSnapshot([row(0,{combat,calculation:c})]);
+    assert.equal(s.characters[0].combat,combat);assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+    assert.equal(s.coverage.selection_policy,'api-or-calculated-maximum-v1');
+    assert.throws(()=>prepareSnapshot([row(0,{combat:combat+1,calculation:c})]));
+    assert.throws(()=>prepareSnapshot([row(0,{combat,calculation:{...c,selected_source:c.selected_source==='api'?'preset':'api'}})]));
+  }
+  const c=make(100,null);
+  for(const patch of [{combinations:1},{presets:{equipment:1,hyper:1,ability:1,union:1}},{search_complete:true},{baseline_status:'matched'},{selection_policy:'unknown'}])
+    assert.throws(()=>prepareSnapshot([row(0,{calculation:{...c,...patch}})]));
+});
+
 test('maximum-projectile assumptions survive CSV and reject false inventory claims or lower attack',()=>{
   const c={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:1,ability:1,union:1},
     version:'preset-api-v17',observed_at:'2026-10-24T00:00:00Z',combinations:1,
