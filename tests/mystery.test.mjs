@@ -196,3 +196,19 @@ test('publisher reads raw PC exports, removes private fields, preserves source, 
     await writeFile(input,JSON.stringify([row(0,{combat:'1억'})])); await assert.rejects(importFile({input,output})); assert.equal(validateSnapshot(JSON.parse(await readFile(output,'utf8'))).characters.length,1);
   } finally { assert(dir.startsWith(root)); await rm(dir,{recursive:true,force:true}); }
 });
+
+
+test('dated partial API-only evidence survives CSV while fabricated completeness or preset choices are rejected',()=>{
+  const c={basis:'preset',version:'preset-api-v18',api_combat:100,baseline_combat:null,baseline_status:'unavailable',
+    observed_at:'2026-10-24T00:00:00Z',selection_policy:'api-or-calculated-maximum-v1',selected_source:'api',preset_combat:null,
+    presets:null,combinations:0,search_complete:false,review_reasons:['baseline_unavailable','preset_unavailable'],
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:null,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:AMMUNITION_POLICY,
+    api_fallback:{policy:'dated-partial-api-v1',failed_endpoint:'user/union-champion',error_code:'OPENAPI00004',equipment_verified:false,secret:'DROP'}};
+  const s=prepareSnapshot([row(0,{calculation:c})]);assert.deepEqual(parseImport(snapshotCSV(s)).characters,s.characters);
+  assert.equal(s.characters[0].calculation.api_fallback.secret,undefined);
+  for(const patch of [{equipment_verified:true},{failed_endpoint:'id'},{error_code:'OPENAPI00007'},{policy:'invented'}])
+    assert.throws(()=>prepareSnapshot([row(0,{calculation:{...c,api_fallback:{...c.api_fallback,...patch}}})]));
+  for(const patch of [{baseline_combat:100,baseline_status:'matched'},{active_equipment_preset:1},{presets:{equipment:1,hyper:1,ability:1,union:1},preset_combat:120,selected_source:'preset',combinations:1}])
+    assert.throws(()=>prepareSnapshot([row(0,{combat:patch.preset_combat||100,calculation:{...c,...patch}})]));
+});

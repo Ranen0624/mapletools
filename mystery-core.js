@@ -111,6 +111,15 @@ export function normalizeCharacter(row, fallbackDate = '') {
       Object.assign(calculation,{selection_policy:SELECTION_POLICY,selected_source:expected,preset_combat:candidate,
         baseline_status:c.baseline_status,search_complete:c.search_complete,review_reasons:[...c.review_reasons]});
     } else if(c.selection_policy!==undefined||c.selected_source!==undefined||c.preset_combat!==undefined)return null;
+    if(c.api_fallback!==undefined) {
+      const f=c.api_fallback;
+      if(!modern||!f||f.policy!=='dated-partial-api-v1'||f.failed_endpoint!=='user/union-champion'||
+          !['OPENAPI00003','OPENAPI00004'].includes(f.error_code)||f.equipment_verified!==false||
+          c.selected_source!=='api'||c.preset_combat!==null||c.baseline_combat!==null||c.presets!==null||c.combinations!==0||c.search_complete||
+          c.active_equipment_preset!==null||excluded?.length!==0||c.android!==undefined||c.cash_plus!==undefined||c.cash_set_adjustments!==undefined)return null;
+      calculation.api_fallback={policy:f.policy,failed_endpoint:f.failed_endpoint,error_code:f.error_code,equipment_verified:false};
+    }
+
     if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=17) {
       if(c.ammunition_policy!==AMMUNITION_POLICY)return null;
       calculation.ammunition_policy=AMMUNITION_POLICY;

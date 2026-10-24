@@ -11,7 +11,7 @@ import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGr
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
 const requiresAmmoSource=version=>{const n=Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1]);return n>=11&&n<17;};
 export function queryAccumulator(date) {
-  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(),policies=new Set(),selectionCounts={api:0,preset:0}; let inputRows=0,scopeExcluded=0;
+  const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(),policies=new Set(),selectionCounts={api:0,preset:0}; let inputRows=0,scopeExcluded=0,apiFallbackCount=0;
   function add(raw) {
     inputRows++;
     const row=normalizeCharacter(raw);
@@ -29,6 +29,7 @@ export function queryAccumulator(date) {
     if(seen.has(key)) { if(seen.get(key)!==serialized) throw Error('동일 캐릭터의 API 기록이 충돌합니다.'); return; }
     seen.set(key,serialized); names.set(nameKey,key); jobs.add(row.job); worlds.add(row.world);
     if(row.calculation?.selection_policy===SELECTION_POLICY)selectionCounts[row.calculation.selected_source]++;
+    if(row.calculation?.api_fallback)apiFallbackCount++;
     const group=worldGroup(row.world);
     for(const world of ['',row.world]) for(const job of ['',row.job]) {
       const key=JSON.stringify([group,world,job]);
@@ -37,7 +38,7 @@ export function queryAccumulator(date) {
       const top=q.levels.get(row.level)||[]; top.push(row); top.sort(compare); top.length=Math.min(10,top.length); q.levels.set(row.level,top);
     }
   }
-  return {add,queries,jobs,worlds,bases,scopes,policies,selectionCounts,get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
+  return {add,queries,jobs,worlds,bases,scopes,policies,selectionCounts,get apiFallbackCount(){return apiFallbackCount;},get scopeExcluded(){return scopeExcluded;},get total(){return seen.size;},get inputRows(){return inputRows;}};
 }
 
 export function discoveryMetadata(progress,previous={}) {
@@ -91,7 +92,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     processed:progress.candidates-(counts.pending||0)-(counts.skipped||0),pending:counts.pending||0,failed:counts.error||0,skipped:counts.skipped||0,
     outside:counts.outside||0,unavailable:counts.excluded||0,verified:acc.total,unverified:counts.unverified||0,calculating:counts.collected||0,scope_excluded:acc.scopeExcluded,
     duplicate_verified_rows:acc.inputRows-acc.scopeExcluded-acc.total,as_of:progress.captured_at||updatedAt,
-    ...(selectMaximum?{selected_sources:acc.selectionCounts}:{}),
+    ...(selectMaximum?{selected_sources:acc.selectionCounts,api_only_from_partial:acc.apiFallbackCount}:{}),
     error_breakdown:Object.fromEntries(Object.entries(progress.error_breakdown||{}).filter(([k,v])=>/^(?:(?:user\/union-champion|character\/basic|id):OPENAPI\d{5}|character\/basic:empty_snapshot)$/.test(k)&&Number.isSafeInteger(v)&&v>=0))};
   const source=selectMaximum?'NEXON Open API · API 착용값·가정 프리셋 최댓값':preset?`NEXON Open API · ${progress.api_mode==='dated'?'API 일일 기록 · ':''}${ownedAndroid?'프리셋·안드로이드':'프리셋'} 조합 계산`:'NEXON character/basic · character/stat API';
   const coverage={status:'partial',level_min:MIN_LEVEL,level_max:MAX_LEVEL,jobs:[...acc.jobs].sort(),worlds:[...acc.worlds].sort(),
@@ -103,6 +104,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
     ...(combatOnly?{equipment_policy:'exclude-training-presets-v1'}:{}),
     description:`${incomplete?'중간 공개본. ':''}290~300레벨 ${acc.total.toLocaleString('ko-KR')}명 · ${ownedAndroid?'프리셋·안드로이드 조합':preset?'프리셋 계산':'API 착용'} 전투력 · 제논·데몬어벤져 제외`,
     limitations:[...(cashPlus?['캐시 개별 능력치는 실제 적용 슬롯으로 검산하며, API에 활성화가 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.']:[]),...(incomplete?[`아직 조회하지 않은 후보 ${collection.pending.toLocaleString('ko-KR')}명과 재확인 오류 ${collection.failed.toLocaleString('ko-KR')}건이 있습니다. 이후 수집으로 순위가 바뀔 수 있습니다.`]:[]),
+      ...(acc.apiFallbackCount?[`유니온 챔피언 조회 실패 ${acc.apiFallbackCount.toLocaleString('ko-KR')}명은 같은 날짜의 기본정보·API 착용 전투력으로 포함합니다. 해당 기록은 프리셋을 계산하지 않았으며 장비·사냥 세팅과 코디 착용 목록은 미확인입니다.`]:[]),
       '이름 목록 확보에 사용한 랭킹 순위·레벨로 전투력 시상 순위를 결정하지 않습니다.',
       'API로 확인 불가능한 캐릭터와 후보 목록 밖 캐릭터가 있어 공식 전체 순위를 보장하지 않습니다.',
       ...(progress.api_mode==='dated'?['표시된 날짜의 API 일일 기록입니다. API는 분 단위 시점을 지정하지 않으며 정확한 23:59 스냅샷을 의미하지 않습니다.']:[]),
