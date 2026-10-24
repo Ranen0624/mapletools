@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261024-combat18';
-import {loadRankingSource} from './mystery-source.js?v=20261024-combat18';
-import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat18';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261024-api-fallback1';
+import {loadRankingSource} from './mystery-source.js?v=20261024-api-fallback1';
+import {loadCharacterDetail} from './mystery-details.js?v=20261024-api-fallback1';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -75,6 +75,7 @@ function render() {
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
   if(c.ammunition_policy===AMMUNITION_POLICY) $('snapshot-basis').textContent+=' '+AMMUNITION_ASSUMPTION;
   if(c.selection_policy===SELECTION_POLICY) $('snapshot-basis').textContent=SELECTION_NOTICE+' '+$('snapshot-basis').textContent.replace('장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.','');
+  if(snapshot.collection?.api_only_from_partial) $('snapshot-basis').textContent+=` 유니온 챔피언 조회 실패 ${snapshot.collection.api_only_from_partial.toLocaleString('ko-KR')}명은 API 착용값만 반영했습니다. 해당 기록의 장비·사냥 세팅은 미확인입니다.`;
   if(c.equipment_policy==='exclude-training-presets-v1') $('snapshot-basis').textContent+=' 어비스 헌터스 링·정령의 펜던트가 있는 사냥 장비 프리셋은 제외합니다.';
   if(c.cash_effect_policy==='cash-base-and-confirmed-plus-v1') $('snapshot-basis').textContent+=' 캐시 능력치는 실제 적용 슬롯으로 계산하고, 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.';
   const errors=snapshot.collection?.error_breakdown||{},championErrors=Object.entries(errors).filter(([key])=>key.startsWith('user/union-champion:')).reduce((n,[,count])=>n+count,0);
@@ -199,10 +200,13 @@ function showOutfit(character,trigger) {
     const c=character.calculation;
     $('profile-facts').append(fact('프리셋 계산값',c.preset_combat===null?'계산 가능한 조합 없음':c.preset_combat.toLocaleString('ko-KR')),
       fact('반영 기준',c.selected_source==='api'?'API 착용값 선택':'가정 프리셋 계산값 선택'));
-    if(!c.search_complete)$('profile-facts').append(fact('비교 범위','계산 가능한 프리셋만 비교'));
+    if(c.api_fallback) {
+      $('profile-facts').append(fact('자료 상태','유니온 챔피언 조회 실패 · API 착용값만 반영'),
+        fact('장비 확인','장비·사냥 세팅 미확인 · 프리셋 계산 안 함'));
+    } else if(!c.search_complete)$('profile-facts').append(fact('비교 범위','계산 가능한 프리셋만 비교'));
     if(c.baseline_status==='mismatch')$('profile-facts').append(fact('착용 상태 검산','API 착용값과 계산값 차이 있음'));
   }
-  if(character.calculation?.ammunition) {
+  if(character.calculation?.ammunition && !character.calculation?.api_fallback) {
     const a=character.calculation.ammunition;
     $('profile-facts').append(fact('탄약 가정',`${a.name} · 공격력 +${a.attack} · 실제 보유 미확인`));
   }

@@ -275,3 +275,20 @@ test('shared site navigation, exclusion explanation and filter reset are usable 
   const app=await readFile(new URL('../app.js',import.meta.url),'utf8');dom.window.matchMedia=()=>({matches:true,addEventListener(){}});dom.window.IntersectionObserver=class{observe(){} disconnect(){}};dom.window.eval(app);
   const toggle=d.querySelector('.menu-toggle');toggle.click();assert.equal(toggle.getAttribute('aria-expanded'),'true');d.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(toggle.getAttribute('aria-expanded'),'false');dom.window.close();
 });
+
+
+test('partial API-only ranks disclose champion failure and unknown training gear without implying ammo correction',async()=>{
+ const calculation={basis:'preset',version:'preset-api-v18',api_combat:100,baseline_combat:null,baseline_status:'unavailable',
+   observed_at:'2026-10-24T00:00:00Z',selection_policy:core.SELECTION_POLICY,selected_source:'api',preset_combat:null,presets:null,
+   combinations:0,search_complete:false,review_reasons:['baseline_unavailable','preset_unavailable'],
+   equipment_policy:'exclude-training-presets-v1',active_equipment_preset:null,excluded_equipment_presets:[],
+   configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:core.AMMUNITION_POLICY,
+   ammunition:{name:'플레임 표창',attack:29,inventory_confirmed:false},
+   api_fallback:{policy:'dated-partial-api-v1',failed_endpoint:'user/union-champion',error_code:'OPENAPI00004',equipment_verified:false}};
+ const dom=await setup({...core.prepareSnapshot([row(0,{job:'나이트로드',calculation})]),collection:{verified:1,pending:0,calculating:0,failed:0,unverified:0,api_only_from_partial:1}}),d=dom.window.document;
+ assert.match(d.getElementById('snapshot-basis').textContent,/조회 실패 1명은 API 착용값만 반영/);
+ d.querySelector('#podium-1 .name-button').click();await flush();
+ const text=d.getElementById('profile-facts').textContent;
+ assert.match(text,/유니온 챔피언 조회 실패.*API 착용값만 반영/);assert.match(text,/장비·사냥 세팅 미확인.*프리셋 계산 안 함/);
+ assert.doesNotMatch(text,/탄약 가정/);assert.match(d.getElementById('profile-detail-status').textContent,/미수집/);dom.window.close();
+});
