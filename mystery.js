@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION} from './mystery-core.js?v=20261024-combat17';
-import {loadRankingSource} from './mystery-source.js?v=20261024-combat17';
-import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat17';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261024-combat18';
+import {loadRankingSource} from './mystery-source.js?v=20261024-combat18';
+import {loadCharacterDetail} from './mystery-details.js?v=20261024-combat18';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -69,10 +69,12 @@ function render() {
   $('snapshot-source').textContent=snapshot.source;
   $('history-retention').textContent=local?'내 파일은 공개 기록의 보관 기간과 관계없이 분석할 수 있습니다.':`최근 ${snapshot.historyRetentionDays||7}일의 기록을 제공합니다. 오래된 기록은 내 CSV 기록 분석을 이용하세요.`;
   const preset=c.combat_basis==='preset';
-  $('snapshot-progress').textContent=snapshot.collection?`${['presets-and-owned-android','presets-owned-android-cash-plus'].includes(c.calculation_scope)?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집'} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':`후보 조회 완료${snapshot.collection.unverified?' · 일부 검증 보류':''}${snapshot.collection.failed?' · 일부 조회 오류':''}`}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
+  const progressBasis=c.selection_policy===SELECTION_POLICY?'API·프리셋 비교':['presets-and-owned-android','presets-owned-android-cash-plus'].includes(c.calculation_scope)?'조합 계산 · 검증':preset?'프리셋 계산 · 검증':'수집';
+  $('snapshot-progress').textContent=snapshot.collection?`${progressBasis} ${snapshot.collection.verified.toLocaleString('ko-KR')}명 · ${snapshot.collection.pending?'수집 중':snapshot.collection.calculating?'계산 중':`후보 조회 완료${snapshot.collection.unverified?' · 일부 검증 보류':''}${snapshot.collection.failed?' · 일부 조회 오류':''}`}`:local?`내 파일 ${snapshot.characters.length.toLocaleString('ko-KR')}명`:snapshot.uncollectedDate?'이 날짜의 기록은 아직 없습니다.':'미수집';
   $('snapshot-basis').textContent=(c.api_mode==='dated'?'표시된 날짜의 API 일일 기록 · 분 단위 시점 지정 미지원. ':'')+(preset?'장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.':'착용 상태의 API 전투력으로 비교합니다.')+(['presets-and-owned-android','presets-owned-android-cash-plus'].includes(c.calculation_scope)?' 보유가 확인된 안드로이드를 직접 장착하는 조합을 포함합니다.':'');
   if(!local&&c.limitations?.includes(AMMUNITION_LIMITATION)) $('snapshot-basis').textContent+=' 사용 탄약을 확인할 수 없는 기록은 검증 보류합니다.';
   if(c.ammunition_policy===AMMUNITION_POLICY) $('snapshot-basis').textContent+=' '+AMMUNITION_ASSUMPTION;
+  if(c.selection_policy===SELECTION_POLICY) $('snapshot-basis').textContent=SELECTION_NOTICE+' '+$('snapshot-basis').textContent.replace('장비·하이퍼·어빌리티·유니온 프리셋의 계산 전투력으로 비교합니다.','');
   if(c.equipment_policy==='exclude-training-presets-v1') $('snapshot-basis').textContent+=' 어비스 헌터스 링·정령의 펜던트가 있는 사냥 장비 프리셋은 제외합니다.';
   if(c.cash_effect_policy==='cash-base-and-confirmed-plus-v1') $('snapshot-basis').textContent+=' 캐시 능력치는 실제 적용 슬롯으로 계산하고, 확인된 마스터라벨 전투 플러스의 코디 프리셋 조합을 포함합니다.';
   const errors=snapshot.collection?.error_breakdown||{},championErrors=Object.entries(errors).filter(([key])=>key.startsWith('user/union-champion:')).reduce((n,[,count])=>n+count,0);
@@ -193,6 +195,13 @@ function showOutfit(character,trigger) {
   $('profile-power').textContent=character.combat.toLocaleString('ko-KR');
   $('profile-facts').replaceChildren(fact('월드',character.world),fact('직업',character.job),fact('레벨',String(character.level)),fact('기준일',character.observedAt));
   if(character.calculation)$('profile-facts').append(fact('API 착용 전투력',character.calculation.api_combat.toLocaleString('ko-KR')));
+  if(character.calculation?.selection_policy===SELECTION_POLICY) {
+    const c=character.calculation;
+    $('profile-facts').append(fact('프리셋 계산값',c.preset_combat===null?'계산 가능한 조합 없음':c.preset_combat.toLocaleString('ko-KR')),
+      fact('반영 기준',c.selected_source==='api'?'API 착용값 선택':'가정 프리셋 계산값 선택'));
+    if(!c.search_complete)$('profile-facts').append(fact('비교 범위','계산 가능한 프리셋만 비교'));
+    if(c.baseline_status==='mismatch')$('profile-facts').append(fact('착용 상태 검산','API 착용값과 계산값 차이 있음'));
+  }
   if(character.calculation?.ammunition) {
     const a=character.calculation.ammunition;
     $('profile-facts').append(fact('탄약 가정',`${a.name} · 공격력 +${a.attack} · 실제 보유 미확인`));
@@ -202,7 +211,7 @@ function showOutfit(character,trigger) {
     $('profile-facts').append(fact('안드로이드',a.name));
     if(a.manual_equip)$('profile-facts').append(fact('장착 조건',`프리셋 ${a.source_preset}의 안드로이드 직접 장착`));
   }
-  $('profile-presets').textContent=character.calculation?'계산 조합 · '+presetInfo(character):'';
+  $('profile-presets').textContent=character.calculation?(character.calculation.selection_policy===SELECTION_POLICY?(character.calculation.selected_source==='api'?'':'가정 계산 조합 · '):'계산 조합 · ')+presetInfo(character):'';
   if(character.calculation?.cash_plus) {
     const c=character.calculation.cash_plus;
     $('profile-facts').append(fact('마스터라벨 전투 플러스',`${c.count}개 적용 · ${c.preset===0?'기본 치장':`코디 프리셋 ${c.preset}`} 선택`));
@@ -240,9 +249,12 @@ async function fillDetail(character,version) {
 }
 function presetInfo(character) {
   const p=character.calculation.presets;
+  if(character.calculation.selected_source==='api')return 'API 착용 상태';
+  if(!p)return '프리셋 계산 불가';
   return `장비 ${p.equipment} · 하이퍼 ${p.hyper} · 어빌 ${p.ability} · 유니온 ${p.union}`+(character.calculation.android?.manual_equip?' · 안드로이드 장착':'')+(character.calculation.cash_plus?` · 코디 ${character.calculation.cash_plus.preset===0?'기본':character.calculation.cash_plus.preset}`:'');
 }
 function powerLabel(character) {
+  if(character.calculation?.selection_policy===SELECTION_POLICY)return character.calculation.selected_source==='api'?'API 착용 전투력':'가정 프리셋 전투력';
   return ['presets-and-owned-android','presets-owned-android-cash-plus'].includes(character.calculation?.configuration_scope)?'조합 계산 전투력':character.calculation?'프리셋 계산 전투력':'API 착용 전투력';
 }
 $('outfit-close').addEventListener('click',()=>window.MapleMotion?window.MapleMotion.closeDialog($('outfit-dialog')):$('outfit-dialog').close());
