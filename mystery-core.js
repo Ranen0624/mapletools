@@ -6,6 +6,10 @@ export const EXCLUDED_JOBS = Object.freeze(['제논','데몬어벤져']);
 export const jobExcluded = job => EXCLUDED_JOBS.includes(String(job).replaceAll(' ',''));
 export const AMMUNITION_JOBS = Object.freeze(['보우마스터','신궁','윈드브레이커','와일드헌터','나이트로드','나이트워커','캡틴']);
 export const AMMUNITION_LIMITATION = '사용 중인 화살·표창·불릿은 전투력에 반영되지만 API에서 확인할 수 없어, 해당 자료는 탄약을 가정하지 않고 검증 보류합니다.';
+export const AMMUNITION_POLICY = 'maximum-projectile-assumed-v1';
+export const AMMUNITION_MAXIMUM = Object.freeze(Object.fromEntries(AMMUNITION_JOBS.map(job=>[job,
+  job==='캡틴'?{name:'자이언트 불릿',attack:22}:['나이트로드','나이트워커'].includes(job)?{name:'플레임 표창',attack:29}:{name:'티타늄 화살',attack:9}])));
+export const AMMUNITION_ASSUMPTION = '화살 +9·표창 +29·불릿 +22의 최고 공격력 탄약 보유를 가정합니다. 실제 인벤토리 보유 확인값이 아닙니다.';
 export function ammunitionHoldNotice(coverage,job,{local=false}={}) {
   return !local && coverage?.combat_basis==='preset' && coverage?.limitations?.includes(AMMUNITION_LIMITATION) && AMMUNITION_JOBS.includes(job)
     ? '사용 탄약을 API에서 확인할 수 없어 조합 전투력 검증을 보류했습니다. 탄약을 임의로 가정해 순위를 표시하지 않습니다.' : '';
@@ -87,6 +91,15 @@ export function normalizeCharacter(row, fallbackDate = '') {
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
       presets:Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])),
       version:c.version,observed_at:c.observed_at,combinations:c.combinations};
+    if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=17) {
+      if(c.ammunition_policy!==AMMUNITION_POLICY)return null;
+      calculation.ammunition_policy=AMMUNITION_POLICY;
+      const maximum=AMMUNITION_MAXIMUM[job],a=c.ammunition;
+      if(maximum) {
+        if(!a||a.name!==maximum.name||a.attack!==maximum.attack||a.inventory_confirmed!==false)return null;
+        calculation.ammunition={name:maximum.name,attack:maximum.attack,inventory_confirmed:false};
+      } else if(a!==undefined)return null;
+    } else if(c.ammunition_policy!==undefined||c.ammunition!==undefined)return null;
     if(policy)Object.assign(calculation,{equipment_policy:policy,active_equipment_preset:c.active_equipment_preset,excluded_equipment_presets:excluded.map(r=>({preset:r.preset,items:[...new Set(r.items)]}))});
     if(c.configuration_scope!==undefined) {
       if(!calculationScopes.has(c.configuration_scope))return null;
@@ -151,6 +164,7 @@ export function filterRank(rows, options = {}) {
   if(new Set(rows.map(r=>r.calculation?'preset':'equipped')).size>1) throw Error('착용 전투력과 프리셋 계산 전투력은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.configuration_scope||'stored-presets')).size>1)throw Error('안드로이드 장착 조합의 계산 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.equipment_policy||'all-presets')).size>1)throw Error('사냥 프리셋 제외 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
+  if(new Set(rows.map(r=>normalizeCharacter(r)?.calculation?.ammunition_policy||'legacy')).size>1)throw Error('탄약 가정 기준이 다른 기록은 한 순위로 비교할 수 없습니다.');
   return uniqueCharacters(rows).filter(r => !jobExcluded(r.job) && r.level >= min && r.level <= max && worldGroup(r.world) === group && (!job || r.job === job) && (!world || r.world === world))
     .sort((a,b) => b.combat - a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko'));
 }
@@ -175,6 +189,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const bases=new Set(characters.map(r=>r.calculation?'preset':'equipped'));
   const scopes=new Set(characters.map(r=>r.calculation?.configuration_scope||'stored-presets'));
   const policies=new Set(characters.map(r=>r.calculation?.equipment_policy||'all-presets'));
+  const ammoPolicies=new Set(characters.map(r=>r.calculation?.ammunition_policy||'legacy'));
+  if(ammoPolicies.size>1||(coverage.ammunition_policy!==undefined&&coverage.ammunition_policy!==AMMUNITION_POLICY)||
+      (coverage.ammunition_policy&&ammoPolicies.size&&!ammoPolicies.has(coverage.ammunition_policy)))throw Error('탄약 가정의 계산 기준이 일치하지 않습니다.');
   if(coverage.cash_effect_policy!==undefined && (coverage.cash_effect_policy!==CASH_EFFECT_POLICY||coverage.calculation_scope!==CASH_SCOPE||(scopes.size&&!scopes.has(CASH_SCOPE))))throw Error('캐시 효과의 계산 기준이 일치하지 않습니다.');
   if(policies.size>1 || (coverage.equipment_policy!==undefined&&coverage.equipment_policy!=='exclude-training-presets-v1') ||
       (coverage.equipment_policy&&policies.size&&!policies.has(coverage.equipment_policy)))throw Error('사냥 프리셋 제외 기준이 일치하지 않습니다.');
@@ -199,6 +216,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     ...(coverage.equipment_policy||policies.has('exclude-training-presets-v1')?{equipment_policy:'exclude-training-presets-v1'}:{}),
     ...(coverage.calculation_scope||[...scopes].some(s=>calculationScopes.has(s))?{calculation_scope:coverage.calculation_scope||[...scopes][0]}:{}),
     ...(scopes.has(CASH_SCOPE)||coverage.cash_effect_policy===CASH_EFFECT_POLICY?{cash_effect_policy:CASH_EFFECT_POLICY}:{}),
+    ...(ammoPolicies.has(AMMUNITION_POLICY)||coverage.ammunition_policy===AMMUNITION_POLICY?{ammunition_policy:AMMUNITION_POLICY}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }

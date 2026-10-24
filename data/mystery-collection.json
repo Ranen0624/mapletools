@@ -2,6 +2,7 @@
   "schema_version": 1,
   "data_date": "2026-10-22",
   "publication_status": "interim",
+  "ammunition_policy": "maximum-projectile-assumed-v1",
   "equipment_policy": "exclude-training-presets-v1",
   "api_mode": "dated",
   "calculation_scope": "presets-owned-android-cash-plus",
@@ -24,10 +25,10 @@
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 123232,
+  "published_characters": 138640,
   "api_verified_groups": {
-    "regular": 115345,
-    "eos-helios": 7887
+    "regular": 129413,
+    "eos-helios": 9227
   },
   "collection": {
     "state": "scanned",
@@ -38,18 +39,18 @@
     "skipped": 0,
     "outside": 31746,
     "unavailable": 6794,
-    "verified": 123232,
-    "unverified": 33922,
+    "verified": 138640,
+    "unverified": 18514,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-23T23:30:20.518292+00:00",
+    "as_of": "2026-10-24T00:06:59.636775+00:00",
     "error_breakdown": {
-      "character/basic:OPENAPI00004": 11,
-      "character/basic:empty_snapshot": 909,
+      "user/union-champion:OPENAPI00004": 4268,
       "id:OPENAPI00004": 164,
-      "user/union-champion:OPENAPI00003": 8,
-      "user/union-champion:OPENAPI00004": 4268
+      "character/basic:empty_snapshot": 909,
+      "character/basic:OPENAPI00004": 11,
+      "user/union-champion:OPENAPI00003": 8
     }
   },
   "discovery_coverage": [
@@ -75,13 +76,14 @@
     }
   ],
   "error_breakdown": {
-    "character/basic:OPENAPI00004": 11,
-    "character/basic:empty_snapshot": 909,
+    "user/union-champion:OPENAPI00004": 4268,
     "id:OPENAPI00004": 164,
-    "user/union-champion:OPENAPI00003": 8,
-    "user/union-champion:OPENAPI00004": 4268
+    "character/basic:empty_snapshot": 909,
+    "character/basic:OPENAPI00004": 11,
+    "user/union-champion:OPENAPI00003": 8
   },
   "notes": [
+    "Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. Exact equipped baseline and all other preset checks remain required.",
     "All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.",
     "Interim rankings compare verified API records as of collection.as_of; pending candidates are not included.",
     "Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.",

@@ -1,4 +1,4 @@
-import {MAX_CSV_BYTES,MIN_LEVEL,MAX_LEVEL,WORLD_GROUPS,worldGroup,jobExcluded,prepareSnapshot,validateSnapshot,validDate} from './mystery-core.js?v=20261024-combat16';
+import {MAX_CSV_BYTES,MIN_LEVEL,MAX_LEVEL,WORLD_GROUPS,worldGroup,jobExcluded,prepareSnapshot,validateSnapshot,validDate} from './mystery-core.js?v=20261024-combat17';
 const poolsByFetcher=new WeakMap();
 const historyPath=(file,date)=>typeof file==='string'&&new RegExp(`^data/mystery-history/${date}/[a-f0-9]{64}\\.json$`).test(file);
 async function readPool(pool,date,base,fetcher) {
