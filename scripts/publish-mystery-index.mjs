@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeHistory} from './mystery-history.mjs';
+import {pruneOrphans} from './mystery-orphans.mjs';
 import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from '../mystery-core.js';
 
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
@@ -113,6 +114,9 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
       ...(combatOnly?[selectMaximum?'어비스 헌터스 링·어비스 헌터 링·정령의 펜던트·스페셜 정령의 펜던트가 있는 장비 프리셋은 계산 후보에서 제외합니다. 실제 API 착용 전투력은 그대로 비교합니다.':'어비스 헌터스 링·어비스 헌터 링·정령의 펜던트·스페셜 정령의 펜던트가 있는 장비 프리셋은 사냥 세팅으로 제외합니다. 현재 착용 프리셋이 제외되면 계산 전투력이 착용 전투력보다 낮을 수 있습니다.']:[]),
       ...(maximumAmmo?[AMMUNITION_ASSUMPTION]:requiresAmmoSource(progress.calculator_version)?[AMMUNITION_LIMITATION]:[]),
       '공개 파일은 이 수집본의 레벨별 전투력 상위 10명이며 선택 범위의 TOP 10을 재구성합니다.']};
+  // Replaced immutable revisions must not accumulate across daily builds.
+  // Run before writing this generation so all active catalog references stay roots.
+  await pruneOrphans(root,{apply:true});
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {
     const rows=[...q.levels].sort(([a],[b])=>a-b).flatMap(([,rows])=>rows);
