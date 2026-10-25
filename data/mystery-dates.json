@@ -1,7 +1,14 @@
 {
   "schema_version": 1,
-  "latest": "2026-10-23",
+  "latest": "2026-10-24",
   "dates": [
+    {
+      "date": "2026-10-24",
+      "index": "data/mystery-history/2026-10-24/cd1303fe77f0eea9fc4ca944af029ba2772016b7ae65114f766f30c2e7c46aa3.json",
+      "verified": 164125,
+      "updated_at": "2026-10-25T03:34:47.932Z",
+      "api_mode": "dated"
+    },
     {
       "date": "2026-10-23",
       "index": "data/mystery-history/2026-10-23/dfa1eb9c7d4320bd54b25e0dbc5e5463b5a120052e3ae93cdeaffc7bf3f33a5e.json",
@@ -37,5 +44,5 @@
     }
   ],
   "retention_days": 7,
-  "latest_dated": "2026-10-23"
+  "latest_dated": "2026-10-24"
 }
