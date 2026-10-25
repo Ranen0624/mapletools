@@ -8,10 +8,12 @@ import {gzipSync} from 'node:zlib';
 import {normalizeDetail} from '../mystery-details.js';
 import {validDate,MAX_CSV_BYTES} from '../mystery-core.js';
 import {retentionDays,cutoffDate,retentionPlan,assertSiteBudget} from './mystery-retention.mjs';
+import {pruneOrphans} from './mystery-orphans.mjs';
 export async function publishDetails({input,root,date}) {
   if(!validDate(date))throw Error('기준일을 확인하세요.');
   const catalog=JSON.parse(await readFile(join(root,'data/mystery-dates.json'),'utf8'));
   if(!catalog.dates.some(d=>d.date===date)||date<cutoffDate(catalog.latest,await retentionDays(root)))throw Error('공개 보관 범위 안의 기준일만 코디 정보를 등록할 수 있습니다.');
+  await pruneOrphans(root,{apply:true});
   const directory=join(root,'data/mystery-details',date);await mkdir(directory,{recursive:true});
   const records={},pools=[],batch=[];let total=0;
   async function flush(){
