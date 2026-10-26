@@ -35,6 +35,21 @@ test('v18 API fallback and assumed preset winners show their distinct source and
   }
 });
 
+test('training-only characters show real API power without a fabricated preset calculation',async()=>{
+  const calculation={basis:'preset',version:'preset-api-v18',api_combat:100,baseline_combat:null,baseline_status:'unavailable',
+    observed_at:'2026-10-25T00:00:00Z',selection_policy:core.SELECTION_POLICY,selected_source:'api',preset_combat:null,
+    presets:null,combinations:0,search_complete:false,review_reasons:['baseline_unavailable','preset_unavailable','training_presets_only'],
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,
+    excluded_equipment_presets:[1,2,3].map(preset=>({preset,items:['정령의 펜던트']})),
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:core.AMMUNITION_POLICY};
+  const dom=await setup(core.prepareSnapshot([row(0,{combat:100,calculation})])),d=dom.window.document;
+  d.querySelector('#podium-1 .name-button').click();await flush();
+  assert.match(d.getElementById('profile-facts').textContent,/사냥 프리셋은 계산 제외.*API 착용값만 반영/);
+  assert.match(d.getElementById('profile-facts').textContent,/계산 가능한 조합 없음/);
+  assert.match(d.getElementById('profile-presets').textContent,/사냥 프리셋 1, 2, 3 제외/);
+  dom.window.close();
+});
+
 test('maximum projectile policy and unconfirmed inventory are visible in ranking and character details',async()=>{
   const calculation={basis:'preset',version:'preset-api-v17',api_combat:100,baseline_combat:100,observed_at:'2026-10-24T00:00:00Z',combinations:1,
     equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
