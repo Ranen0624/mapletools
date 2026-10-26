@@ -29,6 +29,22 @@ test('v18 selects the exact max of API and assumed presets, preserving mismatch 
     assert.throws(()=>prepareSnapshot([row(0,{calculation:{...c,...patch}})]));
 });
 
+test('training-only equipment retains the observed API floor through public validation and CSV',()=>{
+  const c={basis:'preset',version:'preset-api-v18',observed_at:'2026-10-25T00:00:00Z',
+    api_combat:100,preset_combat:null,baseline_combat:null,baseline_status:'unavailable',
+    selection_policy:'api-or-calculated-maximum-v1',selected_source:'api',search_complete:false,
+    review_reasons:['baseline_unavailable','preset_unavailable','training_presets_only'],presets:null,combinations:0,
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,
+    excluded_equipment_presets:[1,2,3].map(preset=>({preset,items:['정령의 펜던트']})),
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:AMMUNITION_POLICY};
+  const snapshot=prepareSnapshot([row(0,{combat:100,calculation:c})]);
+  assert.deepEqual(parseImport(snapshotCSV(snapshot)).characters,snapshot.characters);
+  assert.equal(snapshot.characters[0].calculation.preset_combat,null);
+  assert.equal(snapshot.characters[0].calculation.excluded_equipment_presets.length,3);
+  assert.throws(()=>prepareSnapshot([row(0,{combat:120,calculation:{...c,preset_combat:120,selected_source:'preset',combinations:1,presets:{equipment:1,hyper:1,ability:1,union:1}}})]));
+  assert.throws(()=>prepareSnapshot([row(0,{calculation:{...c,review_reasons:['partial_training_equipment_observed']}})]));
+});
+
 test('maximum-projectile assumptions survive CSV and reject false inventory claims or lower attack',()=>{
   const c={basis:'preset',api_combat:100,baseline_combat:100,presets:{equipment:1,hyper:1,ability:1,union:1},
     version:'preset-api-v17',observed_at:'2026-10-24T00:00:00Z',combinations:1,

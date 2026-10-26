@@ -1,6 +1,6 @@
-import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261024-api-fallback1';
-import {loadRankingSource} from './mystery-source.js?v=20261024-api-fallback1';
-import {loadCharacterDetail} from './mystery-details.js?v=20261024-api-fallback1';
+import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261026-api-floor1';
+import {loadRankingSource} from './mystery-source.js?v=20261026-api-floor1';
+import {loadCharacterDetail} from './mystery-details.js?v=20261026-api-floor1';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -202,8 +202,9 @@ function showOutfit(character,trigger) {
       fact('반영 기준',c.selected_source==='api'?'API 착용값 선택':'가정 프리셋 계산값 선택'));
     if(c.api_fallback) {
       $('profile-facts').append(fact('자료 상태','유니온 챔피언 조회 실패 · API 착용값만 반영'),
-        fact('장비 확인','장비·사냥 세팅 미확인 · 프리셋 계산 안 함'));
-    } else if(!c.search_complete)$('profile-facts').append(fact('비교 범위','계산 가능한 프리셋만 비교'));
+        fact('장비 확인',c.review_reasons.includes('partial_training_equipment_observed')?'일부 사냥 장비 확인 · 전체 프리셋 미확인':'장비·사냥 세팅 미확인 · 프리셋 계산 안 함'));
+    } else if(c.review_reasons.includes('training_presets_only'))$('profile-facts').append(fact('비교 범위','사냥 프리셋은 계산 제외 · API 착용값만 반영'));
+    else if(!c.search_complete)$('profile-facts').append(fact('비교 범위','계산 가능한 프리셋만 비교'));
     if(c.baseline_status==='mismatch')$('profile-facts').append(fact('착용 상태 검산','API 착용값과 계산값 차이 있음'));
   }
   if(character.calculation?.ammunition && !character.calculation?.api_fallback) {

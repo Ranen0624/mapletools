@@ -98,14 +98,16 @@ export function normalizeCharacter(row, fallbackDate = '') {
     if(modern) {
       const candidate=c.preset_combat,available=candidate!==null;
       const expected=available&&candidate>c.api_combat?'preset':'api';
-      const reasons=new Set(['baseline_unavailable','baseline_mismatch','source_warning','preset_incomplete','preset_unavailable','calculator_failure']);
+      const reasons=new Set(['baseline_unavailable','baseline_mismatch','source_warning','preset_incomplete','preset_unavailable','calculator_failure','training_presets_only','partial_training_equipment_observed']);
       if(c.selection_policy!==SELECTION_POLICY || (!power(candidate)&&candidate!==null) ||
           (!power(c.baseline_combat)&&c.baseline_combat!==null) ||
           (available?(!validPresets||c.combinations<1):(p!==null||c.combinations!==0)) ||
           c.selected_source!==expected || combat!==Math.max(c.api_combat,candidate??0) ||
           c.baseline_status!==(c.baseline_combat===null?'unavailable':c.baseline_combat===c.api_combat?'matched':'mismatch') ||
           typeof c.search_complete!=='boolean' || (!available&&c.search_complete) ||
-          !Array.isArray(c.review_reasons)||c.review_reasons.length>6||new Set(c.review_reasons).size!==c.review_reasons.length||c.review_reasons.some(v=>!reasons.has(v)) ||
+          !Array.isArray(c.review_reasons)||c.review_reasons.length>reasons.size||new Set(c.review_reasons).size!==c.review_reasons.length||c.review_reasons.some(v=>!reasons.has(v)) ||
+          (c.review_reasons.includes('training_presets_only')&&(available||expected!=='api')) ||
+          (c.review_reasons.includes('partial_training_equipment_observed')&&!c.api_fallback) ||
           (c.search_complete&&c.review_reasons.includes('preset_incomplete')) ||
           (expected==='api'&&(c.android!==undefined||c.cash_plus!==undefined)))return null;
       Object.assign(calculation,{selection_policy:SELECTION_POLICY,selected_source:expected,preset_combat:candidate,
