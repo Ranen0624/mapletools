@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-25",
+  "data_date": "2026-10-26",
   "publication_status": "interim",
   "selection_policy": "api-or-calculated-maximum-v1",
   "ammunition_policy": "maximum-projectile-assumed-v1",
@@ -18,50 +18,50 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 214730,
+  "candidates": 217386,
   "candidate_groups": {
-    "eos-helios": 13037,
-    "regular": 201693
+    "eos-helios": 13110,
+    "regular": 204276
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 165985,
+  "published_characters": 166498,
   "api_verified_groups": {
-    "regular": 154993,
-    "eos-helios": 10992
+    "eos-helios": 11010,
+    "regular": 155488
   },
   "collection": {
     "state": "scanned",
-    "candidates": 214730,
-    "processed": 214730,
+    "candidates": 217386,
+    "processed": 217386,
     "pending": 0,
-    "failed": 283,
+    "failed": 275,
     "skipped": 0,
-    "outside": 33931,
-    "unavailable": 14531,
-    "verified": 165985,
+    "outside": 34770,
+    "unavailable": 15843,
+    "verified": 166498,
     "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-10-26T02:58:44.714241+00:00",
+    "as_of": "2026-10-27T08:42:31.511192+00:00",
     "selected_sources": {
-      "api": 41221,
-      "preset": 124764
+      "api": 40517,
+      "preset": 125981
     },
-    "api_only_from_partial": 4611,
+    "api_only_from_partial": 4592,
     "error_breakdown": {
       "character/basic:OPENAPI00003": 5,
       "character/basic:OPENAPI00004": 81,
-      "id:OPENAPI00004": 197
+      "id:OPENAPI00004": 189
     }
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 962,
+      "last_page": 968,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
@@ -71,7 +71,7 @@
     {
       "world_type": 1,
       "world_name": "",
-      "last_page": 64,
+      "last_page": 65,
       "last_level": 288,
       "max_pages": 100,
       "initial_limit": 100,
@@ -82,7 +82,7 @@
   "error_breakdown": {
     "character/basic:OPENAPI00003": 5,
     "character/basic:OPENAPI00004": 81,
-    "id:OPENAPI00004": 197
+    "id:OPENAPI00004": 189
   },
   "notes": [
     "Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. API CP is unchanged and compared with calculable assumed presets; exact baseline agreement is not required.",
