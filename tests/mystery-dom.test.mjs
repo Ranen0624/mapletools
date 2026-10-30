@@ -307,3 +307,15 @@ test('partial API-only ranks disclose champion failure and unknown training gear
  assert.match(text,/유니온 챔피언 조회 실패.*API 착용값만 반영/);assert.match(text,/장비·사냥 세팅 미확인.*프리셋 계산 안 함/);
  assert.doesNotMatch(text,/탄약 가정/);assert.match(d.getElementById('profile-detail-status').textContent,/미수집/);dom.window.close();
 });
+
+ test('shared cash base is labeled in the profile without changing its ranking value',async()=>{
+  const candidate=row(0,{image:'https://open.api.nexon.com/static/maplestory/character/look/VALIDATION_ONLY'});
+  const dom=await setup(core.prepareSnapshot([candidate]),'https://example.test/mystery.html',async()=>({
+    gender:'여',guild:null,outfit_source:'world_shared',cash_preset:null,items:[{slot:'모자',name:'공유 모자',label:'마스터라벨'}]}));
+  const d=dom.window.document;d.querySelector('#podium-1 .name-button').click();await flush();
+  assert.match(d.getElementById('profile-outfit-preset').textContent,/월드 공유 치장/);
+  assert.match(d.getElementById('profile-outfit-items').textContent,/공유 모자/);
+  assert.equal(d.querySelectorAll('.outfit-prism').length,0);
+  assert.match(d.getElementById('profile-power').textContent,/100/);
+  dom.window.close();
+ });

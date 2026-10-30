@@ -3,10 +3,10 @@ const clean=(v,max=120)=>typeof v==='string'&&v.length<=max&&!/[\u0000-\u001f]/.
 export function normalizeDetail(raw) {
   if(!raw||typeof raw!=='object'||!validDate(raw.date)||!clean(raw.ocid,100)||!clean(raw.name)||!clean(raw.world)||
       !/^[a-f0-9]{64}$/.test(raw.image_sha256)||
-      !((typeof raw.observed_at==='string'&&!Number.isNaN(Date.parse(raw.observed_at))) || (raw.observed_at===null&&raw.outfit_source==='unavailable'&&raw.cash_preset===null))||
-      !['preset','base','unavailable'].includes(raw.outfit_source)||!Array.isArray(raw.items)||raw.items.length>40||
+      !((typeof raw.observed_at==='string'&&!Number.isNaN(Date.parse(raw.observed_at))) || (raw.observed_at===null&&['unavailable','unverified'].includes(raw.outfit_source)&&raw.cash_preset===null))||
+      !['preset','base','world_shared','unavailable','unverified'].includes(raw.outfit_source)||!Array.isArray(raw.items)||raw.items.length>40||
       (raw.cash_preset!==null&&(!Number.isInteger(raw.cash_preset)||raw.cash_preset<1||raw.cash_preset>3))||
-      (raw.outfit_source==='preset'&&raw.cash_preset===null)||(raw.outfit_source==='unavailable'&&raw.items.length)) return null;
+      (raw.outfit_source==='preset'&&raw.cash_preset===null)||(['unavailable','unverified'].includes(raw.outfit_source)&&raw.items.length)) return null;
   const items=[];
   for(const item of raw.items) {
     const slot=clean(item?.slot,40),name=clean(item?.name,160),label=clean(item?.label||'',60);

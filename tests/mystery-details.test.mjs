@@ -68,3 +68,15 @@ test('uncollected outfit items permit an explicitly unknown response time withou
  const packed={schema_version:1,date,encoding:'gzip-base64',payload:gzipSync(JSON.stringify([unknown])).toString('base64')};
  assert.deepEqual(await decodeDetailPool(packed,date,1),[unknown]);
 });
+
+ test('world shared base details retain explicit provenance without a preset',()=>{
+  const shared={...detail,cash_preset:null,outfit_source:'world_shared'};
+  assert.deepEqual(normalizeDetail(shared),shared);
+  assert.equal(normalizeDetail({...shared,observed_at:null}),null);
+ });
+
+test('unverified historical outfits never carry a guessed item list',()=>{
+ const held={...detail,outfit_source:'unverified',cash_preset:null,observed_at:null,items:[]};
+ assert.deepEqual(normalizeDetail(held),held);
+ assert.equal(normalizeDetail({...held,items:detail.items}),null);
+});
