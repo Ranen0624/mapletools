@@ -1,3 +1,4 @@
+import {isPublicCharacterId} from './public-identity.mjs';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
@@ -34,7 +35,7 @@ if(config.staticIndex) {
       const bytes=await readFile(new URL(pool.file,root));
       assert.ok(pool.file.endsWith(createHash('sha256').update(bytes).digest('hex')+'.json'));
       const envelope=JSON.parse(bytes),rows=JSON.parse(gunzipSync(Buffer.from(envelope.payload,'base64')));
-      for(const row of rows)if(row.ocid)canonicalById.set(row.ocid,row);
+      for(const row of rows)if(row.ocid){assert(isPublicCharacterId(row.ocid),'공개 파일에 원본 API 식별자가 있습니다.');canonicalById.set(row.ocid,row);}
       assert.deepEqual(Object.keys(envelope).sort(),['data_date','encoding','payload','schema_version']);
       assert.deepEqual(rows,prepareSnapshot(rows,{date:day.date}).characters,'압축 기록에 허용되지 않은 필드가 있습니다.');
     }

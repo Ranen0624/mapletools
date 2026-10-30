@@ -1,3 +1,4 @@
+import {publicCharacter} from '../scripts/public-identity.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir,mkdtemp,rm} from 'node:fs/promises';
@@ -26,15 +27,15 @@ test('compressed public details are lazy, cached and matched against name, world
     assert.equal((await publishDetails({input,root,date})).characters,1);
     const calls=[],fetcher=async url=>{calls.push(url);try{return {ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')};}catch{return {ok:false,status:404};}};
     const opts={base:new URL('https://detail.test/'),fetcher};
-    assert.deepEqual(await loadCharacterDetail(character,opts),detail);await loadCharacterDetail(character,opts);assert.equal(calls.length,2);
+    assert.deepEqual(await loadCharacterDetail(publicCharacter(character),opts),publicCharacter(detail));await loadCharacterDetail(publicCharacter(character),opts);assert.equal(calls.length,2);
     assert.equal(await loadCharacterDetail({...character,ocid:'uncollected'},opts),null);
-    for(const extra of [{name:'different'},{world:'에오스'},{image:image+'CHANGED'}])await assert.rejects(loadCharacterDetail({...character,...extra},opts),/일치하지/);
+    for(const extra of [{name:'different'},{world:'에오스'},{image:image+'CHANGED'}])await assert.rejects(loadCharacterDetail({...publicCharacter(character),...extra},opts),/일치하지/);
     const index=JSON.parse(await readFile(join(root,'data/mystery-details',date,'index.json'),'utf8'));
     const pool=JSON.parse(await readFile(join(root,index.pools[0].file),'utf8'));
-    assert.deepEqual(await decodeDetailPool(pool,date,1),[detail]);
+    assert.deepEqual(await decodeDetailPool(pool,date,1),[publicCharacter(detail)]);
     assert.equal(JSON.stringify(await decodeDetailPool(pool,date,1)).includes('DROP_THIS'),false);
     const badFetcher=async()=>({ok:true,text:async()=>JSON.stringify({...index,pools:[{file:'https://untrusted.test/private',count:1}]})});
-    await assert.rejects(loadCharacterDetail(character,{...opts,fetcher:badFetcher}),/주소/);
+    await assert.rejects(loadCharacterDetail(publicCharacter(character),{...opts,fetcher:badFetcher}),/주소/);
     const missing=async()=>({ok:false,status:404});assert.equal(await loadCharacterDetail(character,{...opts,fetcher:missing}),null);
     await assert.rejects(publishDetails({input,root,date:'2026-09-01'}),/보관 범위/);
     const indexPath=join(root,'data/mystery-details',date,'index.json'),previous=await readFile(indexPath,'utf8');
