@@ -1,3 +1,4 @@
+import {publicCharacter} from './public-identity.mjs';
 // Build exact TOP 10 queries over all verified rows in this explicitly dated snapshot.
 import {createReadStream} from 'node:fs';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
@@ -120,7 +121,7 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const entries=[],snapshots=[];
   for(const q of acc.queries.values()) {
     const rows=[...q.levels].sort(([a],[b])=>a-b).flatMap(([,rows])=>rows);
-    const snapshot=prepareSnapshot(rows,{date:progress.data_date,source,coverage,updatedAt});
+    const snapshot=prepareSnapshot(rows.map(publicCharacter),{date:progress.data_date,source,coverage,updatedAt});
     const text=JSON.stringify(snapshot)+'\n';
     if(Buffer.byteLength(text)>MAX_CSV_BYTES) throw Error('조회 파일이 허용 용량을 넘었습니다.');
     const hash=createHash('sha256').update(text).digest('hex');
