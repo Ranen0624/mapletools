@@ -1,3 +1,4 @@
+import {publicCharacter} from './public-identity.mjs';
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {gzipSync} from 'node:zlib';
@@ -21,7 +22,8 @@ export async function writeHistory(root,index,snapshots) {
   const records=[],ids=new Map(),queries=[];
   for(let n=0;n<index.queries.length;n++) {
     const q=index.queries[n],refs=[];
-    for(const row of snapshots[n].characters) {
+    for(const original of snapshots[n].characters) {
+      const row=publicCharacter(original);
       const key=row.ocid||JSON.stringify([row.world,row.name]);
       if(!ids.has(key)) { ids.set(key,records.length); records.push(row); }
       const id=ids.get(key);

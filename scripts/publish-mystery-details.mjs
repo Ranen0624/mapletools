@@ -1,3 +1,4 @@
+import {publicCharacter} from './public-identity.mjs';
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {createInterface} from 'node:readline';
@@ -26,7 +27,7 @@ export async function publishDetails({input,root,date}) {
     await writeFile(join(root,file),text);pools.push({file,count:batch.length});batch.length=0;
   }
   for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})){
-    if(!line.trim())continue;const detail=normalizeDetail(JSON.parse(line));
+    if(!line.trim())continue;const detail=normalizeDetail(publicCharacter(JSON.parse(line)));
     if(!detail||detail.date!==date||Object.hasOwn(records,detail.ocid))throw Error('중복 또는 잘못된 코디 상세 기록입니다.');
     records[detail.ocid]=[pools.length,batch.length];batch.push(detail);total++;
     if(batch.length===100)await flush();
