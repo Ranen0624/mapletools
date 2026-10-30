@@ -35,7 +35,7 @@ for name,p in pages.items():
   links+=1
 release=json.loads((ROOT/'releases.json').read_text(encoding='utf-8'))
 public_files=set()
-for key,version in [('public_windows','2.0.6'),('public_android','1.0.7')]:
+for key,version in [('public_windows','2.0.7'),('public_android','1.0.8')]:
  item=release[key]; data=(ROOT/item['file']).read_bytes()
  assert item['version']==version and item['public_download'] and item['requires_user_key']
  assert len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
@@ -49,7 +49,7 @@ if dev_manifest.exists():
  assert len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
  public_files.add(item['file'])
 text=(ROOT/'index.html').read_text(encoding='utf-8')+(ROOT/'app.js').read_text(encoding='utf-8')
-for term in ['장비','유니온','코디','전투력','HEXA','모아보기','2.0.6','1.0.7','제논','데몬어벤져']:assert term in text,term
+for term in ['장비','유니온','코디','전투력','HEXA','모아보기','2.0.7','1.0.8','제논','데몬어벤져']:assert term in text,term
 for name in ['app.js','demo.js','demo-engine.js','coordi.js','coordi-engine.js','coordi-picker.js','data-mate.js','csv-worker.js','csv-statistics.js','mate-rig.js']:subprocess.run(['node','--check',str(ROOT/name)],check=True)
 # Only verified public release files may be added under downloads.
 changed=subprocess.check_output(['git','status','--porcelain','--no-renames','--untracked-files=all'],cwd=ROOT,text=True)

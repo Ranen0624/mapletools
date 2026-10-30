@@ -1,31 +1,31 @@
 {
-  "updated": "2026-10-24",
+  "updated": "2026-10-30",
   "public_windows": {
-    "version": "2.0.6",
-    "file": "downloads/MapleTools_PC_Public_2.0.6.zip",
-    "bytes": 66481671,
-    "sha256": "16bc8a945c37dcea56ec0458d8063419e1d0a6abbece4040c2acf7f5d70196a5",
+    "version": "2.0.7",
+    "file": "downloads/MapleTools_PC_Public_2.0.7.zip",
+    "bytes": 66506269,
+    "sha256": "973d0b263ec0cb5b17a7d843ad6e4d891b66b32a50d3f5a80e11606ad7044c40",
     "public_download": true,
     "requires_user_key": true,
     "launcher": "MapleTools.exe",
     "package_type": "Nuitka native compiled Windows x64 standalone",
     "device_tested": true,
-    "validation": "63 native compiled application modules; Windows home/equipment/union/coordi runtime; 4 actual API baselines exactly matched; 114 remaining training sources preserve actual API CP and explicit calculation limitations; private-key/source scan passed."
+    "validation": "64 native application modules; Windows home/equipment/union/coordi runtime; 200 actual shared-cash appearance selections, 4 exact API combat baselines and 114 unavailable-preset cases verified; private-key/source scan passed."
   },
   "public_android": {
-    "version": "1.0.7",
-    "file": "downloads/MapleTools_Android_Public_1.0.7.apk",
-    "bytes": 24720117,
-    "sha256": "3104cd47aacdd4daa2f484aa168fb8185203cb5905258c918006ad8d4d389e1e",
+    "version": "1.0.8",
+    "file": "downloads/MapleTools_Android_Public_1.0.8.apk",
+    "bytes": 24753721,
+    "sha256": "e388bdc07a837d1fe598fb277bcfa6bb484c99a55a9b4f21f82278572f2738ce",
     "public_download": true,
     "requires_user_key": true,
     "minimum_android": "8.0",
     "abi": "arm64-v8a",
-    "package_type": "R8 optimized APK with 25 Cython ARM64 application modules",
+    "package_type": "R8 optimized APK with 26 Cython ARM64 application modules",
     "device_tested": false,
-    "version_code": 18,
+    "version_code": 19,
     "emulator_tested": true,
-    "validation": "Android 15 x86_64 native runtime: 4 actual API baselines and 114 remaining training sources; settings-preserving 17-to-18 upgrade and WebView outfit flow passed. ARM64 signer/16KB alignment verified; physical ARM64 device not tested."
+    "validation": "Android 15 x86_64: 200 actual shared-cash selections in native engine and real WebView; 4 exact API combat baselines, 114 unavailable-preset cases, and settings-preserving 18-to-19 upgrade passed. ARM64 signing/16KB alignment verified; physical ARM64 device not tested."
   },
   "web_demo_reference_version": "2.0.4",
   "patch_notes": "updates.html"
