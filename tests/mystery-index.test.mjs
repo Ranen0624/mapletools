@@ -1,3 +1,4 @@
+import {publicCharacter,publicCharacterId,isPublicCharacterId} from '../scripts/public-identity.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,readFile,rm,mkdir} from 'node:fs/promises';
@@ -126,7 +127,7 @@ test('streamed publication rejects unfinished scans, serves exact selected scope
     const fetcher=async url=>({ok:true,text:()=>readFile(join(root,new URL(url).pathname.slice(1)),'utf8')});
     const options={min:292,max:299,group:'eos-helios',world:'에오스',job:'렌'};
     const selected=await loadRankingSource({fetcher,base:new URL('https://example.test/'),options});
-    assert.deepEqual(filterRank(selected.characters,options).slice(0,10),filterRank(rows,options).slice(0,10));
+    assert.deepEqual(filterRank(selected.characters,options).slice(0,10),filterRank(rows.map(publicCharacter),options).slice(0,10));
     assert.equal(await readFile(join(root,new URL(selected.downloadCSV).pathname.slice(1)),'utf8'),snapshotCSV(selected));
     const absent=await loadRankingSource({fetcher,base:new URL('https://example.test/'),options:{...options,job:'미수집 직업'}});
     assert.equal(absent.characters.length,0); assert.equal(absent.coverage.status,'uncollected');
@@ -192,7 +193,7 @@ test('daily archives retain earlier dates, default to latest, and never replace 
     const load=options=>loadRankingSource({fetcher,base:new URL('https://archive.test/'),options});
     const latest=await load({}),old=await load({date});
     assert.equal(latest.coverage.data_date,'2026-10-20');assert.equal(old.coverage.data_date,date);
-    assert.deepEqual(filterRank(old.characters).slice(0,10),filterRank(rows).slice(0,10));
+    assert.deepEqual(filterRank(old.characters).slice(0,10),filterRank(rows.map(publicCharacter)).slice(0,10));
     assert.equal(filterRank(latest.characters)[0].combat,filterRank(old.characters)[0].combat+10000);
     const missing=await load({date:'2026-10-18'});
     assert.equal(missing.characters.length,0);assert.equal(missing.uncollectedDate,true);assert.equal(missing.coverage.data_date,'2026-10-18');
@@ -261,4 +262,14 @@ test('a missing dated collection cannot silently fall back to the old live sourc
     const result=await loadRankingSource({fetcher,base:new URL('https://missing.test/')});
     assert.equal(result.characters.length,0);assert.equal(result.uncollectedDate,true);assert.equal(result.preferredApiMode,'dated');
   }finally{assert(root.startsWith(join(evidence,'mystery-no-dated-')));await rm(root,{recursive:true,force:true});}
+});
+
+test('public identifiers are opaque, stable, idempotent and exclude raw account fragments',()=>{
+ const original={ocid:'a'.repeat(32)+'b'.repeat(32),name:'검증',combat:123};
+ const row=publicCharacter(original);
+ assert(isPublicCharacterId(row.ocid));assert(!row.ocid.includes('b'.repeat(32)));
+ assert.equal(publicCharacterId(row.ocid),row.ocid);
+ assert.notEqual(publicCharacterId('different'),row.ocid);
+ assert.deepEqual({...row,ocid:original.ocid},original);
+ assert.throws(()=>publicCharacterId({}),/형식/);
 });

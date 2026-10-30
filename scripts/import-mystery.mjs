@@ -1,3 +1,4 @@
+import {publicCharacter} from './public-identity.mjs';
 // Run locally. Raw PC exports never need to enter the public Git repository.
 import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import {resolve,dirname,extname} from 'node:path';
@@ -13,7 +14,7 @@ export async function importFile({input,output,date='',scope}) {
   const imported=parseImport(text,{format,date});
   if(!imported.characters.length) throw Error('공개할 실제 캐릭터가 없습니다.');
   const metadata=scope?JSON.parse(await readFile(scope,'utf8')):{};
-  const snapshot=validateSnapshot(prepareSnapshot(imported.characters,{
+  const snapshot=validateSnapshot(prepareSnapshot(imported.characters.map(publicCharacter),{
     date:imported.coverage.data_date,source:metadata.source,coverage:metadata.coverage,updatedAt:new Date().toISOString(),
   }));
   const json=JSON.stringify(snapshot,null,2)+'\n';
