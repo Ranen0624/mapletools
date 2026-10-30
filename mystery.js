@@ -1,6 +1,6 @@
 import {MIN_LEVEL,MAX_LEVEL,MAX_CSV_BYTES,WORLD_GROUPS,worldGroup,jobExcluded,emptySnapshot,filterRank,parseLocalImport,collectionStatus,snapshotCSV,validDate,ammunitionHoldNotice,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from './mystery-core.js?v=20261026-api-floor1';
 import {loadRankingSource} from './mystery-source.js?v=20261026-api-floor1';
-import {loadCharacterDetail} from './mystery-details.js?v=20261026-api-floor1';
+import {loadCharacterDetail} from './mystery-details.js?v=20261030-cash1';
 const $ = id => document.getElementById(id);
 let downloadURLs=[];
 let snapshot=emptySnapshot(),local=false,failure='',busy=false,importVersion=0;
@@ -237,8 +237,8 @@ async function fillDetail(character,version) {
     if(!detail){$('profile-detail-status').textContent='이 기록의 코디 착용 정보는 미수집입니다.';return;}
     if(detail.gender)$('profile-facts').append(fact('성별',detail.gender));
     if(detail.guild!==null)$('profile-facts').append(fact('길드',detail.guild||'소속 없음'));
-    $('profile-outfit-preset').textContent=detail.outfit_source==='preset'?`코디 프리셋 ${detail.cash_preset}`:detail.outfit_source==='base'?'기본 코디':'';
-    $('profile-detail-status').textContent=detail.outfit_source==='unavailable'?'이 기록의 코디 착용 정보는 미수집입니다.':detail.items.length?'수집 당시 착용 정보 · 전투력 계산 조합과 별개입니다.':'수집 당시 착용한 캐시 아이템이 없습니다.';
+    $('profile-outfit-preset').textContent=detail.outfit_source==='preset'?`코디 프리셋 ${detail.cash_preset}`:detail.outfit_source==='world_shared'?'월드 공유 치장 · 기본 코디':detail.outfit_source==='base'?'기본 코디':'';
+    $('profile-detail-status').textContent=detail.outfit_source==='unverified'?'이 기록과 일치하는 코디 착용 정보를 재확인하지 못했습니다.':detail.outfit_source==='unavailable'?'이 기록의 코디 착용 정보는 미수집입니다.':detail.items.length?'수집 당시 착용 정보 · 전투력 계산 조합과 별개입니다.':'수집 당시 착용한 캐시 아이템이 없습니다.';
     const items=detail.items.map(item=>{
       const li=el('li'),text=el('div','outfit-item-copy');li.append(el('span','outfit-slot',item.slot));
       text.append(el('strong','',item.name));if(item.label)text.append(el('small','outfit-label',item.label));
