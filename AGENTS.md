@@ -11,3 +11,7 @@
 - Confirm runtime behavior, package integrity and absence of private material before changing download links.
 - Current public version labels are PC 2.0.8 and Android 1.0.9. Android's internal versionCode must increase for upgrade compatibility.
 - Historical patch-note dates are explicitly editorial feature milestones, not verified historical release dates. Preserve that distinction.
+
+## Sanitized history (2026-10-31)
+
+The owner explicitly authorized removing historical raw API identifiers. All public branches were rewritten while preserving the current website, ranking data and verified program artifacts. Old commit IDs and old PR diffs may no longer be valid. Use a fresh clone of the current remote; never merge or push a pre-cleanup clone or backup into this repository. Recover useful edits by reviewing and applying patches onto the clean history. GitHub-controlled PR references and caches require a separate support purge; rewriting branch history alone does not remove those references.
