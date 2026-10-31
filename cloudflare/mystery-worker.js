@@ -15,6 +15,7 @@ export default {
       if(!current) return reply(date?prepareSnapshot([],{date}):emptySnapshot());
       const {results}=await env.DB.prepare('SELECT payload FROM mystery_characters WHERE snapshot_id=? ORDER BY row_no LIMIT 50001').bind(current.id).all();
       const snapshot=validateSnapshot({...JSON.parse(current.metadata),characters:results.map(r=>JSON.parse(r.payload))});
+      if(snapshot.characters.some(row=>row.ocid&&!/^mt_[a-f0-9]{64}$/.test(row.ocid))) throw Error('private_identifier');
       if(new TextEncoder().encode(JSON.stringify(snapshot)).length>MAX_CSV_BYTES) throw Error('size');
       return reply(snapshot);
     } catch { headers['Cache-Control']='no-store'; return reply({error:'snapshot_unavailable'},503); }
