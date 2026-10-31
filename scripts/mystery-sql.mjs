@@ -1,9 +1,11 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {publicCharacter} from './public-identity.mjs';
 import {validateSnapshot} from '../mystery-core.js';
 const [input,output]=process.argv.slice(2);
 if(!input||!output) throw Error('사용법: node scripts/mystery-sql.mjs 공개수집본.json 출력.sql');
-const s=validateSnapshot(JSON.parse(await readFile(input,'utf8')));
+const original=validateSnapshot(JSON.parse(await readFile(input,'utf8')));
+const s=validateSnapshot({...original,characters:original.characters.map(publicCharacter)});
 const id=createHash('sha256').update(JSON.stringify(s)).digest('hex');
 const quote=v=>"'"+String(v).replaceAll("'","''")+"'";
 const {characters,...metadata}=s;

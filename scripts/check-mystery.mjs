@@ -11,6 +11,7 @@ import {cutoffDate,retentionDays} from './mystery-retention.mjs';
 const text=await readFile(new URL('../data/mystery-rankings.json',import.meta.url),'utf8');
 assert(Buffer.byteLength(text)<=MAX_CSV_BYTES);
 const snapshot=validateSnapshot(JSON.parse(text));
+assert(snapshot.characters.every(row=>!row.ocid||isPublicCharacterId(row.ocid)),'Legacy public feed contains a private identifier');
 assert.equal(await readFile(new URL('../data/mystery-rankings.csv',import.meta.url),'utf8'),snapshotCSV(snapshot),'공개 JSON과 CSV가 서로 다릅니다.');
 // Unknown fields cannot accidentally publish configuration or credentials.
 assert.deepEqual(JSON.parse(text),snapshot,'공개 데이터에 허용되지 않은 필드가 있습니다.');
