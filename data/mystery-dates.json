@@ -1,1 +1,57 @@
-{"schema_version":1,"latest":"2026-10-29","dates":[{"date":"2026-10-29","index":"data/mystery-history/2026-10-29/ee218110b0992994dfe5980c133fd850bf9e4d7309ae083a984ae64995bf5b9d.json","verified":169017,"updated_at":"2026-10-30T03:08:58.737Z","api_mode":"dated"},{"date":"2026-10-28","index":"data/mystery-history/2026-10-28/a4ac0a50bc735f134d37b2b54c0bf501777a8fe0ca59678414e1045babd3efbc.json","verified":167497,"updated_at":"2026-10-29T03:30:50.033Z","api_mode":"dated"},{"date":"2026-10-27","index":"data/mystery-history/2026-10-27/9f3290c485f13299746fcbd18518731baf912b8068308adaf7dc3b981460d9e2.json","verified":167012,"updated_at":"2026-10-28T02:53:19.050Z","api_mode":"dated"},{"date":"2026-10-26","index":"data/mystery-history/2026-10-26/2b73beab68383256b31d822da886e14b1b081058dba468fff4f3a8ecd61f4477.json","verified":166498,"updated_at":"2026-10-27T08:42:39.576Z","api_mode":"dated"},{"date":"2026-10-25","index":"data/mystery-history/2026-10-25/fb81cf6511bef9ddf8b4fdb81ce2f1d015f18a57000783b1e59461e6fb75e9bb.json","verified":165985,"updated_at":"2026-10-26T02:58:51.238Z","api_mode":"dated"},{"date":"2026-10-24","index":"data/mystery-history/2026-10-24/98f30cc681ae0ea2d3de10b1e108feb840c7731527c448bc8086d1e2f05df513.json","verified":164125,"updated_at":"2026-10-25T03:34:47.932Z","api_mode":"dated"},{"date":"2026-10-23","index":"data/mystery-history/2026-10-23/8eea934afbf0b967abd9bddb1d505d27160244ba117adae15cf3dd7f07f1e10c.json","verified":163098,"updated_at":"2026-10-24T05:08:23.252Z","api_mode":"dated"}],"retention_days":7,"latest_dated":"2026-10-29"}
+{
+  "schema_version": 1,
+  "latest": "2026-10-30",
+  "dates": [
+    {
+      "date": "2026-10-30",
+      "index": "data/mystery-history/2026-10-30/fd23b5c43ceabbaa5a4fe6ef417cb897f3680b87b18e65faf975ef143b3553a6.json",
+      "verified": 169731,
+      "updated_at": "2026-11-01T05:54:25.434Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-29",
+      "index": "data/mystery-history/2026-10-29/ee218110b0992994dfe5980c133fd850bf9e4d7309ae083a984ae64995bf5b9d.json",
+      "verified": 169017,
+      "updated_at": "2026-10-30T03:08:58.737Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-28",
+      "index": "data/mystery-history/2026-10-28/a4ac0a50bc735f134d37b2b54c0bf501777a8fe0ca59678414e1045babd3efbc.json",
+      "verified": 167497,
+      "updated_at": "2026-10-29T03:30:50.033Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-27",
+      "index": "data/mystery-history/2026-10-27/9f3290c485f13299746fcbd18518731baf912b8068308adaf7dc3b981460d9e2.json",
+      "verified": 167012,
+      "updated_at": "2026-10-28T02:53:19.050Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-26",
+      "index": "data/mystery-history/2026-10-26/2b73beab68383256b31d822da886e14b1b081058dba468fff4f3a8ecd61f4477.json",
+      "verified": 166498,
+      "updated_at": "2026-10-27T08:42:39.576Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-25",
+      "index": "data/mystery-history/2026-10-25/fb81cf6511bef9ddf8b4fdb81ce2f1d015f18a57000783b1e59461e6fb75e9bb.json",
+      "verified": 165985,
+      "updated_at": "2026-10-26T02:58:51.238Z",
+      "api_mode": "dated"
+    },
+    {
+      "date": "2026-10-24",
+      "index": "data/mystery-history/2026-10-24/98f30cc681ae0ea2d3de10b1e108feb840c7731527c448bc8086d1e2f05df513.json",
+      "verified": 164125,
+      "updated_at": "2026-10-25T03:34:47.932Z",
+      "api_mode": "dated"
+    }
+  ],
+  "retention_days": 7,
+  "latest_dated": "2026-10-30"
+}
