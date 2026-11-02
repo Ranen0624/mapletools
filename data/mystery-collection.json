@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
-  "data_date": "2026-10-31",
+  "data_date": "2026-11-01",
   "publication_status": "interim",
   "selection_policy": "api-or-calculated-maximum-v1",
+  "equipped_validation_policy": "equipped-exact-v1",
   "ammunition_policy": "maximum-projectile-assumed-v1",
   "equipment_policy": "exclude-training-presets-v1",
   "api_mode": "dated",
@@ -12,56 +13,61 @@
     "name_world_job_level_image": "character/basic",
     "combat": "max(same-day character/stat API combat power, calculable assumed equipment/hyper/ability/union/Android/cash preset combinations); no fitted stat residuals; missing preset options remain uncomputed"
   },
-  "ranking_basis": "max(actual same-day API equipped combat power, calculable assumed preset combat power); API wins ties; unavailable presets remain uncomputed",
+  "ranking_basis": "max(actual same-day API combat power, preset candidates permitted only after exact independent equipped validation and consistent sources); unobserved ammunition is API-only",
   "excluded_jobs": [
     "제논",
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 223935,
+  "candidates": 225211,
   "candidate_groups": {
-    "eos-helios": 13311,
-    "regular": 210624
+    "eos-helios": 13364,
+    "regular": 211847
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 170732,
+  "published_characters": 171636,
   "api_verified_groups": {
-    "eos-helios": 11159,
-    "regular": 159573
+    "regular": 160445,
+    "eos-helios": 11191
   },
   "collection": {
     "state": "scanned",
-    "candidates": 223935,
-    "processed": 223935,
+    "candidates": 225211,
+    "processed": 225211,
     "pending": 0,
-    "failed": 244,
+    "failed": 245,
     "skipped": 0,
-    "outside": 34900,
-    "unavailable": 18059,
-    "verified": 170732,
+    "outside": 34948,
+    "unavailable": 18382,
+    "verified": 171636,
     "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-11-01T08:11:53.418834+00:00",
+    "as_of": "2026-11-02T05:21:06.228156+00:00",
     "selected_sources": {
-      "api": 44493,
-      "preset": 126239
+      "api": 75068,
+      "preset": 96568
     },
-    "api_only_from_partial": 4778,
+    "api_only_from_partial": 4846,
+    "equipped_validation": {
+      "matched": 134989,
+      "mismatch": 7151,
+      "unavailable": 29496
+    },
     "error_breakdown": {
-      "character/basic:OPENAPI00003": 6,
-      "character/basic:OPENAPI00004": 73,
-      "id:OPENAPI00004": 165
+      "character/basic:OPENAPI00003": 7,
+      "character/basic:OPENAPI00004": 68,
+      "id:OPENAPI00004": 170
     }
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 989,
+      "last_page": 994,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
@@ -71,7 +77,7 @@
     {
       "world_type": 1,
       "world_name": "",
-      "last_page": 65,
+      "last_page": 66,
       "last_level": 288,
       "max_pages": 100,
       "initial_limit": 100,
@@ -80,12 +86,12 @@
     }
   ],
   "error_breakdown": {
-    "character/basic:OPENAPI00003": 6,
-    "character/basic:OPENAPI00004": 73,
-    "id:OPENAPI00004": 165
+    "character/basic:OPENAPI00003": 7,
+    "character/basic:OPENAPI00004": 68,
+    "id:OPENAPI00004": 170
   },
   "notes": [
-    "Maximum projectile ownership is assumed: arrows +9, throwing stars +29, bullets +22. Inventory is not observed. API CP is unchanged and compared with calculable assumed presets; exact baseline agreement is not required.",
+    "equipped-exact-v1: only an exact independent equipped baseline with consistent sources permits a preset candidate; unobserved ammunition remains API-only.",
     "All game data uses the requested API calendar date; collection.as_of is the publication cutoff, not a minute-specific game snapshot.",
     "Interim rankings compare published API-backed records as of collection.as_of; pending candidates are not included.",
     "Candidate count includes the level 289 date-boundary buffer and is not the final eligible population.",
