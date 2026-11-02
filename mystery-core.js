@@ -98,7 +98,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
     if(modern) {
       const candidate=c.preset_combat,available=candidate!==null;
       const expected=available&&candidate>c.api_combat?'preset':'api';
-      const reasons=new Set(['baseline_unavailable','baseline_mismatch','source_warning','preset_incomplete','preset_unavailable','calculator_failure','training_presets_only','partial_training_equipment_observed']);
+      const reasons=new Set(['baseline_unavailable','baseline_mismatch','source_warning','preset_incomplete','preset_unavailable','calculator_failure','training_presets_only','partial_training_equipment_observed','ammunition_source_unavailable']);
       if(c.selection_policy!==SELECTION_POLICY || (!power(candidate)&&candidate!==null) ||
           (!power(c.baseline_combat)&&c.baseline_combat!==null) ||
           (available?(!validPresets||c.combinations<1):(p!==null||c.combinations!==0)) ||
@@ -110,6 +110,13 @@ export function normalizeCharacter(row, fallbackDate = '') {
           (c.review_reasons.includes('partial_training_equipment_observed')&&!c.api_fallback) ||
           (c.search_complete&&c.review_reasons.includes('preset_incomplete')) ||
           (expected==='api'&&(c.android!==undefined||c.cash_plus!==undefined)))return null;
+      if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=19) {
+        if(c.equipped_validation_policy!=='equipped-exact-v1'||
+            (available&&(c.baseline_status!=='matched'||c.baseline_combat!==c.api_combat||
+              c.review_reasons.some(v=>['baseline_unavailable','baseline_mismatch','source_warning','ammunition_source_unavailable'].includes(v))))||
+            (AMMUNITION_JOBS.includes(job)&&(available||c.baseline_combat!==null||!c.review_reasons.includes('ammunition_source_unavailable'))))return null;
+        calculation.equipped_validation_policy='equipped-exact-v1';
+      }
       Object.assign(calculation,{selection_policy:SELECTION_POLICY,selected_source:expected,preset_combat:candidate,
         baseline_status:c.baseline_status,search_complete:c.search_complete,review_reasons:[...c.review_reasons]});
     } else if(c.selection_policy!==undefined||c.selected_source!==undefined||c.preset_combat!==undefined)return null;
@@ -224,6 +231,9 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
   const policies=new Set(characters.map(r=>r.calculation?.equipment_policy||'all-presets'));
   const ammoPolicies=new Set(characters.map(r=>r.calculation?.ammunition_policy||'legacy'));
   const selections=new Set(characters.map(r=>r.calculation?.selection_policy||'legacy'));
+  const validations=new Set(characters.map(r=>r.calculation?.equipped_validation_policy||'legacy'));
+  if(validations.size>1||(coverage.equipped_validation_policy!==undefined&&coverage.equipped_validation_policy!=='equipped-exact-v1')||
+      (coverage.equipped_validation_policy&&validations.size&&!validations.has(coverage.equipped_validation_policy)))throw Error('착용 검증 기준이 다른 기록은 혼합할 수 없습니다.');
   if(selections.size>1||(coverage.selection_policy!==undefined&&coverage.selection_policy!==SELECTION_POLICY)||
       (coverage.selection_policy&&selections.size&&!selections.has(coverage.selection_policy)))throw Error('API·계산 최댓값 선택 기준이 일치하지 않습니다.');
   if(ammoPolicies.size>1||(coverage.ammunition_policy!==undefined&&coverage.ammunition_policy!==AMMUNITION_POLICY)||
@@ -254,6 +264,7 @@ export function prepareSnapshot(rawRows, {date='',source='PC 검색 결과 · NE
     ...(scopes.has(CASH_SCOPE)||coverage.cash_effect_policy===CASH_EFFECT_POLICY?{cash_effect_policy:CASH_EFFECT_POLICY}:{}),
     ...(ammoPolicies.has(AMMUNITION_POLICY)||coverage.ammunition_policy===AMMUNITION_POLICY?{ammunition_policy:AMMUNITION_POLICY}:{}),
     ...(selections.has(SELECTION_POLICY)||coverage.selection_policy===SELECTION_POLICY?{selection_policy:SELECTION_POLICY}:{}),
+    ...(coverage.equipped_validation_policy==='equipped-exact-v1'?{equipped_validation_policy:'equipped-exact-v1'}:{}),
     ...(coverage.excluded_jobs?{excluded_jobs:[...EXCLUDED_JOBS]}:{}),...(status === 'complete' ? {expected_count:characters.length} : {}),
   },characters};
 }

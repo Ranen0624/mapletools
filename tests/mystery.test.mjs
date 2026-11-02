@@ -228,3 +228,28 @@ test('dated partial API-only evidence survives CSV while fabricated completeness
   for(const patch of [{baseline_combat:100,baseline_status:'matched'},{active_equipment_preset:1},{presets:{equipment:1,hyper:1,ability:1,union:1},preset_combat:120,selected_source:'preset',combinations:1}])
     assert.throws(()=>prepareSnapshot([row(0,{combat:patch.preset_combat||100,calculation:{...c,...patch}})]));
 });
+
+
+test('v19 requires exact equipped validation before any preset candidate, including API-selected lower candidates',()=>{
+  const make=(patch={})=>({basis:'preset',version:'preset-api-v19',observed_at:'2026-11-02T00:00:00Z',
+    api_combat:100,preset_combat:120,baseline_combat:100,baseline_status:'matched',
+    equipped_validation_policy:'equipped-exact-v1',selection_policy:'api-or-calculated-maximum-v1',selected_source:'preset',
+    search_complete:true,review_reasons:[],presets:{equipment:2,hyper:1,ability:1,union:1},combinations:1,
+    equipment_policy:'exclude-training-presets-v1',active_equipment_preset:1,excluded_equipment_presets:[],
+    configuration_scope:'presets-owned-android-cash-plus',cash_effect_policy:'cash-base-and-confirmed-plus-v1',ammunition_policy:AMMUNITION_POLICY,...patch});
+  const valid=prepareSnapshot([row(0,{combat:120,calculation:make()})],{coverage:{equipped_validation_policy:'equipped-exact-v1'}});
+  assert.equal(valid.coverage.equipped_validation_policy,'equipped-exact-v1');
+  assert.deepEqual(parseImport(snapshotCSV(valid)).characters,valid.characters);
+  for(const patch of [{equipped_validation_policy:undefined},{baseline_combat:99,baseline_status:'mismatch'},
+      {baseline_combat:null,baseline_status:'unavailable'},{review_reasons:['source_warning']},{review_reasons:['ammunition_source_unavailable']}])
+    assert.throws(()=>prepareSnapshot([row(0,{combat:120,calculation:make(patch)})]));
+  assert.throws(()=>prepareSnapshot([row(0,{combat:100,calculation:make({preset_combat:90,selected_source:'api',baseline_combat:99,baseline_status:'mismatch'})})]));
+  const held=make({preset_combat:null,presets:null,combinations:0,search_complete:false,selected_source:'api',baseline_combat:99,baseline_status:'mismatch',review_reasons:['baseline_mismatch','preset_unavailable']});
+  const snapshot=prepareSnapshot([row(0,{combat:100,calculation:held})]);
+  assert.equal(snapshot.characters[0].combat,100);
+  const ammo={...held,baseline_combat:null,baseline_status:'unavailable',review_reasons:['ammunition_source_unavailable','baseline_unavailable','preset_unavailable'],
+    ammunition:{name:'플레임 표창',attack:29,inventory_confirmed:false}};
+  assert.equal(prepareSnapshot([row(0,{job:'나이트로드',combat:100,calculation:ammo})]).characters[0].calculation.preset_combat,null);
+  assert.throws(()=>prepareSnapshot([row(0,{job:'나이트로드',combat:120,calculation:make({ammunition:ammo.ammunition})})]));
+  assert.throws(()=>prepareSnapshot([row(0,{combat:120,calculation:make()}),row(1,{combat:120,calculation:{...make(),version:'preset-api-v18',equipped_validation_policy:undefined}})]));
+});
