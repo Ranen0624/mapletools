@@ -1,7 +1,14 @@
 {
   "schema_version": 1,
-  "latest": "2026-11-03",
+  "latest": "2026-11-04",
   "dates": [
+    {
+      "date": "2026-11-04",
+      "index": "data/mystery-history/2026-11-04/f16560c19d94c9600a0657add22b5e24651b74a9bcb9fbf3ff79ed37e60c32b0.json",
+      "verified": 173150,
+      "updated_at": "2026-11-05T03:06:55.068Z",
+      "api_mode": "dated"
+    },
     {
       "date": "2026-11-03",
       "index": "data/mystery-history/2026-11-03/571a60d5c289fb563313e36580d74951f45056a8303c14771af320f1c88fdf37.json",
@@ -43,15 +50,8 @@
       "verified": 169017,
       "updated_at": "2026-11-02T02:40:15.811Z",
       "api_mode": "dated"
-    },
-    {
-      "date": "2026-10-28",
-      "index": "data/mystery-history/2026-10-28/a4ac0a50bc735f134d37b2b54c0bf501777a8fe0ca59678414e1045babd3efbc.json",
-      "verified": 167497,
-      "updated_at": "2026-10-29T03:30:50.033Z",
-      "api_mode": "dated"
     }
   ],
   "retention_days": 7,
-  "latest_dated": "2026-11-03"
+  "latest_dated": "2026-11-04"
 }
