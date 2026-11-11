@@ -240,6 +240,9 @@ test('v19 requires exact equipped validation before any preset candidate, includ
   const valid=prepareSnapshot([row(0,{combat:120,calculation:make()})],{coverage:{equipped_validation_policy:'equipped-exact-v1'}});
   assert.equal(valid.coverage.equipped_validation_policy,'equipped-exact-v1');
   assert.deepEqual(parseImport(snapshotCSV(valid)).characters,valid.characters);
+  const patched=make({version:'preset-api-v20.1'});
+  assert.equal(prepareSnapshot([row(0,{combat:120,calculation:patched})]).characters[0].calculation.version,'preset-api-v20.1');
+  assert.throws(()=>prepareSnapshot([row(0,{combat:120,calculation:{...patched,baseline_combat:99,baseline_status:'mismatch'}})]));
   for(const patch of [{equipped_validation_policy:undefined},{baseline_combat:99,baseline_status:'mismatch'},
       {baseline_combat:null,baseline_status:'unavailable'},{review_reasons:['source_warning']},{review_reasons:['ammunition_source_unavailable']}])
     assert.throws(()=>prepareSnapshot([row(0,{combat:120,calculation:make(patch)})]));
