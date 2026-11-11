@@ -8,10 +8,10 @@ import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {writeHistory} from './mystery-history.mjs';
 import {pruneOrphans} from './mystery-orphans.mjs';
-import {MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from '../mystery-core.js';
+import {calculatorMajorVersion,MIN_LEVEL,MAX_LEVEL,EXCLUDED_JOBS,jobExcluded,normalizeCharacter,worldGroup,prepareSnapshot,snapshotCSV,MAX_CSV_BYTES,AMMUNITION_JOBS,AMMUNITION_LIMITATION,AMMUNITION_POLICY,AMMUNITION_ASSUMPTION,SELECTION_POLICY,SELECTION_NOTICE} from '../mystery-core.js';
 
 const compare=(a,b)=>b.combat-a.combat || a.name.localeCompare(b.name,'ko') || a.world.localeCompare(b.world,'ko');
-const requiresAmmoSource=version=>{const n=Number(/^preset-api-v(\d+)$/.exec(String(version))?.[1]);return n>=11&&n<17;};
+const requiresAmmoSource=version=>{const n=calculatorMajorVersion(version);return n>=11&&n<17;};
 export function queryAccumulator(date) {
   const seen=new Map(),names=new Map(),queries=new Map(),jobs=new Set(),worlds=new Set(),bases=new Set(),scopes=new Set(),policies=new Set(),selectionCounts={api:0,preset:0},baselineCounts={matched:0,mismatch:0,unavailable:0}; let inputRows=0,scopeExcluded=0,apiFallbackCount=0;
   function add(raw) {
@@ -68,10 +68,10 @@ export async function publishIndex({input,audit,root,allowPartial=false,archive=
   const incomplete=!!(counts.pending||counts.collected||counts.error||counts.unverified);
   if(incomplete&&!allowPartial) throw Error('전체 후보 API 검증과 오류 재확인이 끝난 작업만 공개할 수 있습니다. 중간 공개는 --allow-partial을 명시하세요.');
   const acc=queryAccumulator(progress.data_date);
-  const maximumAmmo=Number(/^preset-api-v(\d+)$/.exec(String(progress.calculator_version))?.[1])>=17;
-  const exactEquipped=Number(/^preset-api-v(\d+)$/.exec(String(progress.calculator_version))?.[1])>=19;
+  const maximumAmmo=calculatorMajorVersion(progress.calculator_version)>=17;
+  const exactEquipped=calculatorMajorVersion(progress.calculator_version)>=19;
   if(exactEquipped&&progress.equipped_validation_policy!=='equipped-exact-v1')throw Error('착용 상태 정확 검증 정책을 확인하세요.');
-  const selectMaximum=Number(/^preset-api-v(\d+)$/.exec(String(progress.calculator_version))?.[1])>=18;
+  const selectMaximum=calculatorMajorVersion(progress.calculator_version)>=18;
   if(selectMaximum&&progress.selection_policy!==SELECTION_POLICY)throw Error('API·계산 최댓값 선택 정책을 확인하세요.');
   if(maximumAmmo&&progress.ammunition_policy!==AMMUNITION_POLICY)throw Error('탄약 가정 정책을 확인하세요.');
   for await(const line of createInterface({input:createReadStream(input),crlfDelay:Infinity})) if(line.trim()) {

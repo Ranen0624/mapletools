@@ -1,3 +1,9 @@
+export function calculatorMajorVersion(version) {
+  if (typeof version !== 'string') return NaN;
+  const match = /^preset-api-v(\d+)(?:\.\d+)?$/.exec(version);
+  return match ? Number(match[1]) : NaN;
+}
+
 // Shared by the browser, publisher and future Worker. No sample ranking data.
 import {parseCSV} from './csv-statistics.js';
 export const MIN_LEVEL = 290;
@@ -74,13 +80,14 @@ export function normalizeCharacter(row, fallbackDate = '') {
     let c=row.calculation;
     if(typeof c==='string') { try {c=JSON.parse(c);} catch {return null;} }
     const p=c?.presets;
-    const modern=Number(/^preset-api-v(\d+)$/.exec(String(c?.version))?.[1])>=18;
+    const major=calculatorMajorVersion(c?.version);
+    const modern=major>=18;
     const power=v=>Number.isSafeInteger(v)&&v>=0;
     const validPresets=p&&['equipment','hyper','ability','union'].every(k=>Number.isInteger(p[k])&&p[k]>=1&&p[k]<=(k==='union'?10:3));
     const policy=c?.equipment_policy,excluded=c?.excluded_equipment_presets;
     const trainingNames=new Set(['어비스 헌터 링','어비스 헌터스 링','정령의 펜던트','스페셜 정령의 펜던트']);
     let activeTraining=false;
-    if(policy!==undefined || Number(/^preset-api-v(\d+)$/.exec(String(c?.version))?.[1])>=14) {
+    if(policy!==undefined || major>=14) {
       if(policy!=='exclude-training-presets-v1' || (!(modern&&c.active_equipment_preset===null)&&(!Number.isInteger(c?.active_equipment_preset) || c.active_equipment_preset<1 || c.active_equipment_preset>3)) ||
           !Array.isArray(excluded)||excluded.length>(modern?3:2) || new Set(excluded.map(r=>r?.preset)).size!==excluded.length ||
           excluded.some(r=>!Number.isInteger(r?.preset)||r.preset<1||r.preset>3||!Array.isArray(r.items)||!r.items.length||r.items.some(name=>!trainingNames.has(name))) ||
@@ -89,8 +96,8 @@ export function normalizeCharacter(row, fallbackDate = '') {
     }
     if(!c || c.basis!=='preset' || !power(c.api_combat) || (!modern&&c.api_combat===0) ||
         (!modern&&(c.baseline_combat!==c.api_combat || (combat<c.api_combat&&!activeTraining) || !validPresets)) ||
-        !Number.isInteger(c.combinations)||c.combinations<(modern?0:1)||c.combinations>(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15?1350:270) ||
-        typeof c.version!=='string'||!/^preset-api-v\d+$/.test(c.version)||
+        !Number.isInteger(c.combinations)||c.combinations<(modern?0:1)||c.combinations>(major>=15?1350:270) ||
+        !Number.isSafeInteger(major)||
         typeof c.observed_at!=='string'||!/^\d{4}-\d{2}-\d{2}T/.test(c.observed_at)||Number.isNaN(Date.parse(c.observed_at))) return null;
     calculation={basis:'preset',api_combat:c.api_combat,baseline_combat:c.baseline_combat,
       presets:p?Object.fromEntries(['equipment','hyper','ability','union'].map(k=>[k,p[k]])):null,
@@ -110,7 +117,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
           (c.review_reasons.includes('partial_training_equipment_observed')&&!c.api_fallback) ||
           (c.search_complete&&c.review_reasons.includes('preset_incomplete')) ||
           (expected==='api'&&(c.android!==undefined||c.cash_plus!==undefined)))return null;
-      if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=19) {
+      if(major>=19) {
         if(c.equipped_validation_policy!=='equipped-exact-v1'||
             (available&&(c.baseline_status!=='matched'||c.baseline_combat!==c.api_combat||
               c.review_reasons.some(v=>['baseline_unavailable','baseline_mismatch','source_warning','ammunition_source_unavailable'].includes(v))))||
@@ -129,7 +136,7 @@ export function normalizeCharacter(row, fallbackDate = '') {
       calculation.api_fallback={policy:f.policy,failed_endpoint:f.failed_endpoint,error_code:f.error_code,equipment_verified:false};
     }
 
-    if(Number(/^preset-api-v(\d+)$/.exec(c.version)?.[1])>=17) {
+    if(major>=17) {
       if(c.ammunition_policy!==AMMUNITION_POLICY)return null;
       calculation.ammunition_policy=AMMUNITION_POLICY;
       const maximum=AMMUNITION_MAXIMUM[job],a=c.ammunition;
@@ -148,8 +155,8 @@ export function normalizeCharacter(row, fallbackDate = '') {
         calculation.android={name:clean(a.name),source_preset:a.source_preset,manual_equip:a.manual_equip};
       }
     } else if(c.android!==undefined)return null;
-    if(c.configuration_scope===CASH_SCOPE || Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])>=15) {
-      if(Number(/^preset-api-v(\d+)$/.exec(String(c.version))?.[1])<15||c.configuration_scope!==CASH_SCOPE||c.cash_effect_policy!==CASH_EFFECT_POLICY)return null;
+    if(c.configuration_scope===CASH_SCOPE || major>=15) {
+      if(major<15||c.configuration_scope!==CASH_SCOPE||c.cash_effect_policy!==CASH_EFFECT_POLICY)return null;
       calculation.cash_effect_policy=CASH_EFFECT_POLICY;
       if(c.cash_plus!==undefined) {
         const v=c.cash_plus;
