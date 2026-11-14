@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_date": "2026-11-12",
+  "data_date": "2026-11-13",
   "publication_status": "interim",
   "selection_policy": "api-or-calculated-maximum-v1",
   "equipped_validation_policy": "equipped-exact-v1",
@@ -19,48 +19,47 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 239141,
+  "candidates": 240448,
   "candidate_groups": {
-    "eos-helios": 13883,
-    "regular": 225258
+    "eos-helios": 13932,
+    "regular": 226516
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 182824,
+  "published_characters": 183748,
   "api_verified_groups": {
-    "eos-helios": 11594,
-    "regular": 171230
+    "eos-helios": 11630,
+    "regular": 172118
   },
   "collection": {
     "state": "scanned",
-    "candidates": 239141,
-    "processed": 239141,
+    "candidates": 240448,
+    "processed": 240448,
     "pending": 0,
-    "failed": 229,
+    "failed": 225,
     "skipped": 0,
-    "outside": 35242,
-    "unavailable": 20846,
-    "verified": 182824,
+    "outside": 35529,
+    "unavailable": 20946,
+    "verified": 183748,
     "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-11-14T02:19:19.394506+00:00",
+    "as_of": "2026-11-14T05:35:11.242892+00:00",
     "selected_sources": {
-      "api": 76182,
-      "preset": 106642
+      "api": 75230,
+      "preset": 108518
     },
-    "api_only_from_partial": 5529,
+    "api_only_from_partial": 5610,
     "equipped_validation": {
-      "matched": 144083,
-      "mismatch": 6472,
-      "unavailable": 32269
+      "matched": 144772,
+      "mismatch": 6507,
+      "unavailable": 32469
     },
     "error_breakdown": {
       "character/basic:OPENAPI00003": 14,
       "character/basic:OPENAPI00004": 56,
-      "character/basic:empty_snapshot": 4,
       "id:OPENAPI00004": 155
     }
   },
@@ -68,7 +67,7 @@
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 1053,
+      "last_page": 1059,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
@@ -89,7 +88,6 @@
   "error_breakdown": {
     "character/basic:OPENAPI00003": 14,
     "character/basic:OPENAPI00004": 56,
-    "character/basic:empty_snapshot": 4,
     "id:OPENAPI00004": 155
   },
   "notes": [
