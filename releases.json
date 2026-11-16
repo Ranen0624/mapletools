@@ -1,31 +1,31 @@
 {
-  "updated": "2026-10-31",
+  "updated": "2026-11-16",
   "public_windows": {
-    "version": "2.0.8",
-    "file": "downloads/MapleTools_PC_Public_2.0.8.zip",
-    "bytes": 66516151,
-    "sha256": "51da8edb9415a832ef1614091142301e5c186a5de8939ec6a5191d7bb3ad8c38",
+    "version": "2.0.9",
+    "file": "downloads/MapleTools_PC_Public_2.0.9.zip",
+    "bytes": 58043122,
+    "sha256": "6bfe1490337f57829b441f74b5467acbb09d8c6eddfbdbad67591d25e802d2a1",
     "public_download": true,
     "requires_user_key": true,
     "launcher": "MapleTools.exe",
     "package_type": "Nuitka native compiled Windows x64 standalone",
     "device_tested": true,
-    "validation": "64 compiled app modules; Windows home/equipment/union/coordi runtime; 15 synthetic native API protocol checks; 200 saved shared-cash cases, 4 exact API baselines and 114 unavailable-preset cases. Credential and fragment scan passed."
+    "validation": "Windows x64 native executable: home/equipment/union/coordi screens, 19 usage and upgrade-compatibility checks plus 15 synthetic API protocol checks. Public credential/source scan passed."
   },
   "public_android": {
-    "version": "1.0.9",
-    "file": "downloads/MapleTools_Android_Public_1.0.9.apk",
-    "bytes": 24770365,
-    "sha256": "8d00d437094aec366481814cdcef5a61047f7e1c8f8b24b36424314c4b137ba6",
+    "version": "1.0.10",
+    "file": "downloads/MapleTools_Android_Public_1.0.10.apk",
+    "bytes": 24771089,
+    "sha256": "bfd92df2987142c754365a2400c3fd81737c1719e4cc4573c35fed8cbc99f1ab",
     "public_download": true,
     "requires_user_key": true,
     "minimum_android": "8.0",
     "abi": "arm64-v8a",
     "package_type": "R8 optimized APK with 26 Cython ARM64 application modules",
     "device_tested": false,
-    "version_code": 20,
-    "emulator_tested": true,
-    "validation": "Android 15 x86_64: 15 native API protocol checks, 200 saved shared-cash cases and 200 real WebView cases; 4 exact API baselines, 114 unavailable-preset cases and settings-preserving 19-to-20 upgrade. ARM64 signer and 16KB alignment verified; physical ARM64 untested."
+    "version_code": 21,
+    "emulator_tested": false,
+    "validation": "26 native ARM64 application modules; release build and lint, matching previous signing certificate, 16KB alignment, nested archive and credential/source scan passed. Android backend 11 and DOM 10 tests passed. Physical device/emulator execution not verified for this version."
   },
   "web_demo_reference_version": "2.0.4",
   "patch_notes": "updates.html"
