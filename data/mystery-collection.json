@@ -46,15 +46,15 @@
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-11-23T03:26:46.905856+00:00",
+    "as_of": "2026-11-23T04:23:04.230412+00:00",
     "selected_sources": {
-      "api": 160951,
-      "preset": 29741
+      "api": 78897,
+      "preset": 111795
     },
     "api_only_from_partial": 5976,
     "equipped_validation": {
-      "matched": 41532,
-      "mismatch": 114371,
+      "matched": 148152,
+      "mismatch": 7751,
       "unavailable": 34789
     },
     "error_breakdown": {
