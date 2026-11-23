@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "data_date": "2026-11-21",
+  "data_date": "2026-11-22",
   "publication_status": "interim",
   "selection_policy": "api-or-calculated-maximum-v1",
   "equipped_validation_policy": "equipped-exact-v1",
@@ -19,56 +19,55 @@
     "데몬어벤져"
   ],
   "candidate_discovery": "ranking/overall API for names only; includes level 289 as a date-boundary buffer",
-  "candidates": 248116,
+  "candidates": 248149,
   "candidate_groups": {
-    "eos-helios": 14184,
-    "regular": 233932
+    "eos-helios": 14197,
+    "regular": 233952
   },
   "per_level_candidate_cap": null,
   "display_level_min": 290,
   "display_level_max": 300,
-  "published_characters": 190692,
+  "published_characters": 191505,
   "api_verified_groups": {
-    "regular": 178775,
-    "eos-helios": 11917
+    "regular": 179560,
+    "eos-helios": 11945
   },
   "collection": {
     "state": "scanned",
-    "candidates": 248116,
-    "processed": 248116,
+    "candidates": 248149,
+    "processed": 248149,
     "pending": 0,
-    "failed": 197,
+    "failed": 136,
     "skipped": 0,
-    "outside": 35710,
-    "unavailable": 21517,
-    "verified": 190692,
+    "outside": 35435,
+    "unavailable": 21073,
+    "verified": 191505,
     "unverified": 0,
     "calculating": 0,
     "scope_excluded": 0,
     "duplicate_verified_rows": 0,
-    "as_of": "2026-11-23T04:23:04.230412+00:00",
+    "as_of": "2026-11-23T07:26:18.921964+00:00",
     "selected_sources": {
-      "api": 78897,
-      "preset": 111795
+      "api": 80016,
+      "preset": 111489
     },
-    "api_only_from_partial": 5976,
+    "api_only_from_partial": 6059,
     "equipped_validation": {
-      "matched": 148152,
-      "mismatch": 7751,
-      "unavailable": 34789
+      "matched": 149812,
+      "mismatch": 6929,
+      "unavailable": 34764
     },
     "error_breakdown": {
       "character/basic:OPENAPI00003": 20,
       "character/basic:OPENAPI00004": 43,
-      "character/basic:empty_snapshot": 2,
-      "id:OPENAPI00004": 132
+      "id:OPENAPI00004": 73
     }
   },
   "discovery_coverage": [
     {
       "world_type": 0,
       "world_name": "",
-      "last_page": 1095,
+      "last_page": 1099,
       "last_level": 288,
       "max_pages": 1600,
       "initial_limit": 100,
@@ -89,8 +88,7 @@
   "error_breakdown": {
     "character/basic:OPENAPI00003": 20,
     "character/basic:OPENAPI00004": 43,
-    "character/basic:empty_snapshot": 2,
-    "id:OPENAPI00004": 132
+    "id:OPENAPI00004": 73
   },
   "notes": [
     "equipped-exact-v1: only an exact independent equipped baseline with consistent sources permits a preset candidate; unobserved ammunition remains API-only.",
